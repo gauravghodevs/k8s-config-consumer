@@ -1,0 +1,22 @@
+#!/bin/bash
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-consumer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: config-consumer
+  template:
+    metadata:
+      labels:
+        app: config-consumer
+    spec:
+      containers:
+      - name: consumer
+        image: k8s-config-consumer:latest
+        imagePullPolicy: Never
+        envFrom:
+        - configMapRef:
+            name: app-config

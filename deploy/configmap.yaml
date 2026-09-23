@@ -1,0 +1,9 @@
+#!/bin/bash 
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+data:
+  APP_ENV: "production"
+  DB_HOST: "prod-db-cluster.internal"
+  POLL_INTERVAL: "10"
