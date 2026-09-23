@@ -1,8 +1,9 @@
-#!/bin/bash
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: config-consumer
+  labels:
+    app: config-consumer
 spec:
   replicas: 1
   selector:
@@ -15,8 +16,32 @@ spec:
     spec:
       containers:
       - name: consumer
-        image: k8s-config-consumer:latest
-        imagePullPolicy: Never
-        envFrom:
-        - configMapRef:
-            name: app-config
+        image: k8s-config-consumer:v2
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+          name: http
+        env:
+        - name: CONFIG_PATH
+          value: "/etc/rules/rules.yaml"
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          failureThreshold: 3
+        volumeMounts:
+        - name: rules-volume
+          mountPath: /etc/rules
+      volumes:
+      - name: rules-volume
+        configMap:
+          name: rules-config

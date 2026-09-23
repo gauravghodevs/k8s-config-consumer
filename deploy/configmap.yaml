@@ -1,9 +1,14 @@
-#!/bin/bash 
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: app-config
+  name: rules-config
 data:
-  APP_ENV: "production"
-  DB_HOST: "prod-db-cluster.internal"
-  POLL_INTERVAL: "10"
+  rules.yaml: |
+    version: "1.0"
+    rules:
+      - name: block_bad_ip
+        action: deny
+        priority: 100
+      - name: allow_internal
+        action: allow
+        priority: 10
