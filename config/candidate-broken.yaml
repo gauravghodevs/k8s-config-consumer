@@ -1,0 +1,5 @@
+version: "3.0"
+rules:
+  - name: bad_action_rule
+    action: drop_all_traffic
+    priority: "urgent"

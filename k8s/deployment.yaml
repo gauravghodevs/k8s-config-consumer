@@ -1,22 +1,38 @@
-#!/bin/bash
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: config-consumer
+  name: rules-consumer
+  namespace: blast-radius
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: config-consumer
+      app: rules-consumer
   template:
     metadata:
       labels:
-        app: config-consumer
+        app: rules-consumer
     spec:
       containers:
-      - name: consumer
-        image: k8s-config-consumer:latest
-        imagePullPolicy: Never
-        envFrom:
-        - configMapRef:
-            name: app-config
+        - name: rules-consumer
+          image: rules-consumer:1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CONFIG_PATH
+              value: /config/rules.yaml
+            - name: DATA_DIR
+              value: /var/lib/rules
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: rules-data
+              mountPath: /var/lib/rules
+      volumes:
+        - name: config
+          configMap:
+            name: rules-config
+        - name: rules-data
+          emptyDir: {}

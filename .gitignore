@@ -1,3 +1,31 @@
-#!/bin/bash
 
-echo -e "__pycache__/\n*.pyc\n.DS_Store/" > .gitignore
+n
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Environment files / secrets
+.env
+.env.*
+*.secret
+
+# Vim / editor files
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Runtime data
+data/
+*.log
+
+# Local temporary files
+consumer/1!
