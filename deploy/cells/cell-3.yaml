@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rules-consumer
+  namespace: blast-cell-3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rules-consumer
+  template:
+    metadata:
+      labels:
+        app: rules-consumer
+        cell: cell-3
+    spec:
+      containers:
+        - name: rules-consumer
+          image: blast-consumer:dev
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8080
+          env:
+            - name: CONFIG_PATH
+              value: /config/rules.yaml
+            - name: DATA_DIR
+              value: /var/lib/rules
+          volumeMounts:
+            - name: config
+              mountPath: /config
+              readOnly: true
+            - name: rules-data
+              mountPath: /var/lib/rules
+      volumes:
+        - name: config
+          configMap:
+            name: rules-config
+        - name: rules-data
+          emptyDir: {}
