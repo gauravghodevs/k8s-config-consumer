@@ -1,0 +1,35 @@
+name: Blast Radius Guard CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r consumer/requirements.txt
+
+      - name: Compile Python files
+        run: |
+          python -m py_compile consumer/app/main.py
+          python -m py_compile tests/test_consumer_contract.py
+
+      - name: Run consumer contract tests
+        run: |
+          python tests/test_consumer_contract.py

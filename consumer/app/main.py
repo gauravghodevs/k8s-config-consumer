@@ -6,6 +6,9 @@ import time
 from pathlib import Path
 
 import yaml
+import json
+from jsonschema import validate as jsonschema_validate
+from jsonschema.exceptions import ValidationError
 from flask import Flask, jsonify
 from prometheus_client import Counter, Gauge, generate_latest
 from werkzeug.wrappers import Response
@@ -17,6 +20,13 @@ from werkzeug.wrappers import Response
 
 CONFIG_PATH = Path(
     os.getenv("CONFIG_PATH", "/config/rules.yaml")
+)
+
+SCHEMA_PATH = Path(
+    os.getenv(
+        "SCHEMA_PATH",
+        "/app/schema/rules.schema.json"
+    )
 )
 
 DATA_DIR = Path(
@@ -84,47 +94,45 @@ last_config_hash = None
 
 def validate_config(config):
     """
-    Validate structure and semantics of the configuration.
+    Validate configuration schema and semantics.
     """
 
-    if not isinstance(config, dict):
-        raise ValueError("Configuration must be a YAML object")
+    # --------------------------------------------------------
+    # Layer 1: JSON Schema validation
+    # --------------------------------------------------------
 
-    if "version" not in config:
-        raise ValueError("Missing 'version'")
+    if not SCHEMA_PATH.exists():
+        raise FileNotFoundError(
+            f"Schema file does not exist: {SCHEMA_PATH}"
+        )
 
-    if "rules" not in config:
-        raise ValueError("Missing 'rules'")
+    with SCHEMA_PATH.open("r") as file:
+        schema = json.load(file)
 
-    if not isinstance(config["rules"], list):
-        raise ValueError("'rules' must be a list")
+    try:
+        jsonschema_validate(
+            instance=config,
+            schema=schema
+        )
 
-    valid_actions = {"allow", "deny"}
+    except ValidationError as error:
+        raise ValueError(
+            f"Schema validation failed: {error.message}"
+        )
+
+    # --------------------------------------------------------
+    # Layer 2: Semantic validation
+    # --------------------------------------------------------
 
     rule_names = set()
 
     for rule in config["rules"]:
 
-        if not isinstance(rule, dict):
-            raise ValueError("Each rule must be an object")
-
-        required_fields = {
-            "name",
-            "action",
-            "priority",
-        }
-
-        missing = required_fields - rule.keys()
-
-        if missing:
-            raise ValueError(
-                f"Rule missing fields: {missing}"
-            )
-
         name = rule["name"]
         action = rule["action"]
         priority = rule["priority"]
 
+        # Duplicate rule names
         if name in rule_names:
             raise ValueError(
                 f"Duplicate rule name: {name}"
@@ -132,19 +140,30 @@ def validate_config(config):
 
         rule_names.add(name)
 
-        if action not in valid_actions:
-            raise ValueError(
-                f"Invalid action: {action}"
-            )
-
-        if not isinstance(priority, int):
-            raise ValueError(
-                f"Priority must be integer: {name}"
-            )
-
+        # Priority safety
         if priority < 0:
             raise ValueError(
                 f"Priority cannot be negative: {name}"
+            )
+
+        if priority > 10000:
+            raise ValueError(
+                f"Priority exceeds maximum: {name}"
+            )
+
+        # ----------------------------------------------------
+        # Dangerous wildcard protection
+        # ----------------------------------------------------
+
+        dangerous_names = {
+            "*",
+            "allow_everything",
+            "deny_everything"
+        }
+
+        if name in dangerous_names:
+            raise ValueError(
+                f"Dangerous wildcard rule rejected: {name}"
             )
 
     return True
