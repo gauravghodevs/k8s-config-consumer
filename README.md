@@ -95,7 +95,7 @@ Previous Known-Good Configuration
 - **CI/CD:** GitHub Actions
 - **Version Control:** Git + GitHub
 
-## Architecture 
+## Architecture
                     Candidate Configuration
                              |
                              v
@@ -118,7 +118,7 @@ Previous Known-Good Configuration
               v              v              v
         +-----------+  +-----------+  +-----------+
         |  Cell 1   |  |  Cell 2   |  |  Cell 3   |
-        | INTERNAL  |  |   ~10%    |  |   100%    |
+        | INTERNAL + 1% |  |   10%    |  |   100%    |
         +-----+-----+  +-----+-----+  +-----+-----+
               |              |              |
               v              v              v
@@ -132,7 +132,7 @@ Previous Known-Good Configuration
               v
        Health + SHA256 Checks
               |
-       +------+------+ 
+       +------+------+
        |             |
      HEALTHY       FAILURE
        |             |
@@ -258,7 +258,7 @@ git --version
 Clone the repository:
 
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/gauravghodevs/k8s-config-consumer.git blast-radius-guard
 cd blast-radius-guard
 ```
 
@@ -283,7 +283,11 @@ docker build -t blast-consumer:dev ./consumer
 kind load docker-image blast-consumer:dev --name devops
 ```
 
-Deploy the configuration consumers and Kubernetes resources from the repository manifests.
+Deploy the configuration consumers:
+
+```bash
+kubectl apply -f deploy/cells/
+```
 
 ## Rollout Usage
 
@@ -363,7 +367,7 @@ blast-radius-guard/
 ├── consumer/                  # Configuration consumer service
 │   ├── app/                   # Consumer application
 │   ├── schema/                # JSON Schema definitions
-│   └── tests/                 # Consumer contract tests
+│   └── requirements.txt         # Python dependencies
 ├── controller/                # Rollout controller
 ├── deploy/                    # Kubernetes deployment manifests
 │   └── cells/                 # Cell-specific resources
@@ -373,7 +377,7 @@ blast-radius-guard/
 └── README.md
 ```
 
-### Controller State Machine 
+### Controller State Machine
 PENDING
    |
    v
@@ -417,7 +421,7 @@ INTERNAL  →  1%  →  10%  →  100%
 
 ### Controller Manager
 
-```text 
+```text
 PENDING
    ↓
 VALIDATING
@@ -430,7 +434,7 @@ HEALTHY
    ↓
 COMPLETED
 
-#when a roll out fails 
+On rollout failure
 HALTED
    ↓
 ROLLING_BACK
