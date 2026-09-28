@@ -36,7 +36,7 @@ class PromotionController:
         self.started_at = datetime.now(timezone.utc).isoformat()
 
         self.state_file = "/tmp/blast-radius-guard-state.json"
-    self.previous_configs = {}
+        self.previous_configs = {}
 
     # ---------------------------------------------------------
     # Utility
@@ -151,8 +151,8 @@ class PromotionController:
     # Kubernetes promotion
     # ---------------------------------------------------------
 
-        def apply_to_cell(self, namespace):
-        	print(
+    def apply_to_cell(self, namespace):
+        print(
             f"[K8S] Applying candidate configuration "
             f"to {namespace}"
         )
@@ -257,6 +257,7 @@ class PromotionController:
     def check_health(self, namespace, baseline_metrics=None):
         print(f"[HEALTH] Checking {namespace}")
 
+
         metrics = self.get_metrics(namespace)
 
         loaded = metrics.get("rules_config_loaded", 0)
@@ -318,6 +319,28 @@ class PromotionController:
         )
 
         return True
+
+    def wait_for_candidate(self, namespace, timeout=30):
+        print(
+            f"[WAIT] Waiting for candidate to become active "
+            f"in {namespace}"
+        )
+
+        deadline = time.time() + timeout
+
+        while time.time() < deadline:
+            if self.check_health(namespace):
+                print(
+                    f"[WAIT] Candidate is active in {namespace}"
+                )
+                return
+
+            time.sleep(2)
+
+        raise RuntimeError(
+            f"Candidate did not become active in {namespace} "
+            f"within {timeout} seconds"
+        )
 
     def bake(self, seconds, namespace, baseline_metrics=None):
         self.transition(State.BAKING)
@@ -426,6 +449,8 @@ class PromotionController:
             )
 
             self.apply_to_cell(namespace)
+
+            self.wait_for_candidate(namespace)
 
             if bake_time > 0:
 

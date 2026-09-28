@@ -1,0 +1,8 @@
+version: "1.3"
+rules:
+  - name: block_bad_ip_v3
+    action: deny
+    priority: 200
+  - name: allow_internal
+    action: allow
+    priority: 10
