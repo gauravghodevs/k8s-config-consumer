@@ -331,6 +331,56 @@ class PromotionController:
             f"[HEALTH] Checking {namespace}"
         )
 
+        # Check Deployment readiness at cell level.
+        ready_command = (
+            f"kubectl get deployment rules-consumer "
+            f"-n {namespace} "
+            f"-o jsonpath='{{.status.readyReplicas}}'"
+        )
+
+        try:
+            ready_output = self.run_cmd(ready_command).strip()
+            ready_replicas = int(ready_output or "0")
+        except Exception as error:
+            print(
+                f"[HEALTH] Deployment readiness check failed: {error}"
+            )
+            return False
+
+        print(
+            f"[HEALTH] ready_replicas={ready_replicas}"
+        )
+
+        if ready_replicas < 1:
+            print(
+                "[HEALTH] No Ready rules-consumer replicas"
+            )
+            return False
+
+        # Check application health endpoint.
+        pod = self.get_pod(namespace)
+
+        health_command = (
+            f"kubectl exec -n {namespace} {pod} -- "
+            f"python3 -c "
+            f"\"import urllib.request; "
+            f"urllib.request.urlopen("
+            f"'http://127.0.0.1:8080/health', "
+            f"timeout=5).read()\""
+        )
+
+        try:
+            self.run_cmd(health_command)
+        except Exception as error:
+            print(
+                f"[HEALTH] Application health check failed: {error}"
+            )
+            return False
+
+        print(
+            "[HEALTH] Application health endpoint is OK"
+        )
+
         metrics = self.get_metrics(namespace)
 
         loaded = metrics.get(

@@ -25,6 +25,17 @@ spec:
               value: /config/rules.yaml
             - name: DATA_DIR
               value: /var/lib/rules
+            - name: ENABLE_FAULT_INJECTION
+              value: "false"
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8080
+            initialDelaySeconds: 3
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 1
+            successThreshold: 1
           volumeMounts:
             - name: config
               mountPath: /config

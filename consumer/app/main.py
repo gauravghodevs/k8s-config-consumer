@@ -40,6 +40,18 @@ POLL_INTERVAL = float(
     os.getenv("POLL_INTERVAL", "2")
 )
 
+# Test-only fault injection. Disabled by default.
+ENABLE_FAULT_INJECTION = (
+    os.getenv("ENABLE_FAULT_INJECTION", "false").lower() == "true"
+)
+
+FAULT_INJECTION_FILE = Path(
+    os.getenv(
+        "FAULT_INJECTION_FILE",
+        "/tmp/blast-radius-guard-fault"
+    )
+)
+
 
 # ============================================================
 # Flask
@@ -344,6 +356,14 @@ def configuration_watcher():
 @app.route("/health")
 def health():
 
+    if (
+        ENABLE_FAULT_INJECTION
+        and FAULT_INJECTION_FILE.exists()
+    ):
+        return jsonify({
+            "status": "fault_injected"
+        }), 503
+
     return jsonify({
         "status": "ok"
     })
@@ -351,6 +371,14 @@ def health():
 
 @app.route("/ready")
 def ready():
+
+    if (
+        ENABLE_FAULT_INJECTION
+        and FAULT_INJECTION_FILE.exists()
+    ):
+        return jsonify({
+            "status": "fault_injected"
+        }), 503
 
     with state_lock:
 
