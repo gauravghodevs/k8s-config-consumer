@@ -1,0 +1,8 @@
+version: "1.5"
+rules:
+  - name: block_bad_ip_v5
+    action: destroy
+    priority: 400
+  - name: allow_internal
+    action: allow
+    priority: 10

@@ -427,24 +427,54 @@ class PromotionController:
 
         print(
             f"[BAKE] {namespace} "
-            f"for up to {seconds} seconds"
+            f"for {seconds} seconds"
         )
 
         deadline = time.time() + seconds
+        checks = 0
 
         while time.time() < deadline:
-            if self.check_health(
-                namespace,
-                baseline_metrics
-            ):
-                self.transition(State.HEALTHY)
-                return
+            checks += 1
 
-            time.sleep(2)
+            print(
+                f"[BAKE] Health check #{checks} "
+                f"for {namespace}"
+            )
 
-        raise RuntimeError(
-            f"Health check failed in {namespace} "
-            f"after {seconds} seconds"
+            try:
+                healthy = self.check_health(
+                    namespace,
+                    baseline_metrics
+                )
+            except Exception as error:
+                print(
+                    f"[BAKE] Health check error: {error}"
+                )
+                healthy = False
+
+            if not healthy:
+                raise RuntimeError(
+                    f"Health check failed during bake "
+                    f"in {namespace}"
+                )
+
+            remaining = max(
+                0,
+                int(deadline - time.time())
+            )
+
+            print(
+                f"[BAKE] Healthy — {remaining}s remaining"
+            )
+
+            if remaining > 0:
+                time.sleep(min(5, remaining))
+
+        self.transition(State.HEALTHY)
+
+        print(
+            f"[BAKE] Completed successfully for "
+            f"{namespace} after {seconds} seconds"
         )
 
     # ---------------------------------------------------------

@@ -1,0 +1,8 @@
+version: "1.4"
+rules:
+  - name: block_bad_ip_v4
+    action: deny
+    priority: 300
+  - name: allow_internal
+    action: allow
+    priority: 10
