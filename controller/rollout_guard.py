@@ -146,7 +146,6 @@ class PromotionController:
 
         self.save_state()
 
-
     # ---------------------------------------------------------
     # Kubernetes promotion
     # ---------------------------------------------------------
@@ -174,7 +173,8 @@ class PromotionController:
                 f"for {namespace}"
             )
 
-        content = open(self.candidate_file).read()
+        with open(self.candidate_file) as file:
+            content = file.read()
 
         escaped = json.dumps(content)
 
@@ -193,6 +193,24 @@ class PromotionController:
 
         self.run_cmd(command)
 
+        restart_command = (
+            f"kubectl rollout restart deployment/rules-consumer "
+            f"-n {namespace}"
+        )
+
+        self.run_cmd(restart_command)
+
+        rollout_wait_command = (
+            f"kubectl rollout status deployment/rules-consumer "
+            f"-n {namespace} --timeout=60s"
+        )
+
+        self.run_cmd(rollout_wait_command)
+
+        print(
+            f"[K8S] Consumer restarted in {namespace}"
+        )
+
         print(
             f"[K8S] Candidate applied to {namespace}"
         )
@@ -203,64 +221,123 @@ class PromotionController:
 
     def get_pod(self, namespace):
         command = (
-            f"kubectl get pods "
-            f"-n {namespace} "
-            f"-l app=rules-consumer "
-            f"-o jsonpath='{{.items[0].metadata.name}}'"
+            "kubectl get pods "
+            "-n " + namespace + " "
+            "-l app=rules-consumer "
+            "--field-selector=status.phase=Running "
+            "-o json"
         )
 
-        pod = self.run_cmd(command)
+        output = self.run_cmd(command)
 
-        if not pod:
+        import json
+
+        data = json.loads(output)
+        candidates = []
+
+        for item in data.get("items", []):
+            metadata = item.get("metadata", {})
+            status = item.get("status", {})
+
+            # Ignore pods that are being terminated.
+            if metadata.get("deletionTimestamp"):
+                continue
+
+            # Only use pods whose Ready condition is True.
+            ready = False
+            for condition in status.get("conditions", []):
+                if (
+                    condition.get("type") == "Ready"
+                    and condition.get("status") == "True"
+                ):
+                    ready = True
+                    break
+
+            if ready:
+                candidates.append(item)
+
+        if not candidates:
             raise RuntimeError(
-                f"No rules-consumer pod found "
-                f"in {namespace}"
+                "No Ready rules-consumer pod found "
+                "in " + namespace
             )
 
-        return pod
-
-    def get_metrics(self, namespace):
-        pod = self.get_pod(namespace)
-
-        command = (
-            f"kubectl exec -n {namespace} {pod} -- "
-            f"python3 -c "
-            f"\"import urllib.request; "
-            f"print(urllib.request.urlopen("
-            f"'http://localhost:8080/metrics', "
-            f"timeout=3).read().decode())\""
+        # Prefer the newest Ready pod after a rollout.
+        candidates.sort(
+            key=lambda item: item.get("metadata", {}).get(
+                "creationTimestamp", ""
+            ),
+            reverse=True
         )
 
-        raw = self.run_cmd(command)
+        return candidates[0]["metadata"]["name"]
 
-        metrics = {}
+    def get_metrics(self, namespace):
+        last_error = None
 
-        for line in raw.splitlines():
+        for attempt in range(1, 6):
+            try:
+                # Find a fresh pod on every attempt.
+                pod = self.get_pod(namespace)
 
-            if line.startswith("#"):
-                continue
+                command = (
+                    f"kubectl exec -n {namespace} {pod} -- "
+                    f"python3 -c "
+                    f"\"import urllib.request; "
+                    f"print(urllib.request.urlopen("
+                    f"'http://127.0.0.1:8080/metrics', "
+                    f"timeout=5).read().decode())\""
+                )
 
-            if not line.strip():
-                continue
+                raw = self.run_cmd(command)
 
-            parts = line.split()
+                metrics = {}
 
-            if len(parts) == 2:
+                for line in raw.splitlines():
+                    if line.startswith("#"):
+                        continue
 
-                try:
-                    metrics[parts[0]] = float(parts[1])
-                except ValueError:
-                    continue
+                    if not line.strip():
+                        continue
 
-        return metrics
+                    parts = line.split()
+
+                    if len(parts) == 2:
+                        try:
+                            metrics[parts[0]] = float(parts[1])
+                        except ValueError:
+                            continue
+
+                return metrics
+
+            except Exception as error:
+                last_error = error
+
+                print(
+                    f"[HEALTH] Metrics attempt "
+                    f"{attempt}/5 failed: {error}"
+                )
+
+                if attempt < 5:
+                    time.sleep(2)
+
+        raise RuntimeError(
+            f"Unable to read metrics from "
+            f"{namespace} after 5 attempts: {last_error}"
+        )
 
     def check_health(self, namespace, baseline_metrics=None):
-        print(f"[HEALTH] Checking {namespace}")
-
+        print(
+            f"[HEALTH] Checking {namespace}"
+        )
 
         metrics = self.get_metrics(namespace)
 
-        loaded = metrics.get("rules_config_loaded", 0)
+        loaded = metrics.get(
+            "rules_config_loaded",
+            0
+        )
+
         failures = metrics.get(
             "rules_config_reload_failure_total",
             0
@@ -291,6 +368,7 @@ class PromotionController:
                 file.read()
             ).hexdigest()
 
+        # Re-select the pod instead of reusing an old pod.
         pod = self.get_pod(namespace)
 
         command = (
@@ -299,11 +377,13 @@ class PromotionController:
         )
 
         output = self.run_cmd(command)
+
         active_hash = output.split()[0]
 
         print(
             f"[HEALTH] candidate_hash={candidate_hash}"
         )
+
         print(
             f"[HEALTH] active_hash={active_hash}"
         )
@@ -320,7 +400,7 @@ class PromotionController:
 
         return True
 
-    def wait_for_candidate(self, namespace, timeout=30):
+    def wait_for_candidate(self, namespace, timeout=90):
         print(
             f"[WAIT] Waiting for candidate to become active "
             f"in {namespace}"
@@ -384,7 +464,6 @@ class PromotionController:
             )
             return
 
-        # Restore in reverse order of promotion
         for namespace, content in reversed(
             list(self.previous_configs.items())
         ):
@@ -409,6 +488,21 @@ class PromotionController:
 
             self.run_cmd(command)
 
+            # Restart so the restored ConfigMap becomes active.
+            restart_command = (
+                f"kubectl rollout restart deployment/rules-consumer "
+                f"-n {namespace}"
+            )
+
+            self.run_cmd(restart_command)
+
+            rollout_wait_command = (
+                f"kubectl rollout status deployment/rules-consumer "
+                f"-n {namespace} --timeout=60s"
+            )
+
+            self.run_cmd(rollout_wait_command)
+
             print(
                 f"[ROLLBACK] Restored {namespace}"
             )
@@ -416,6 +510,10 @@ class PromotionController:
         print(
             "[ROLLBACK] Cross-cell rollback completed"
         )
+
+    # ---------------------------------------------------------
+    # Promotion
+    # ---------------------------------------------------------
 
     def promote(self):
 
@@ -504,7 +602,12 @@ class PromotionController:
 
             self.transition(State.HALTED)
 
-            self.rollback()
+            try:
+                self.rollback()
+            except Exception as rollback_error:
+                print(
+                    f"[ROLLBACK FAILURE] {rollback_error}"
+                )
 
             print("=" * 70)
             print("ROLLOUT HALTED AND ROLLBACK INITIATED")
