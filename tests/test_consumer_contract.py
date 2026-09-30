@@ -1,4 +1,5 @@
 import os
+import sys
 import shutil
 import subprocess
 import tempfile
@@ -81,11 +82,11 @@ def run_consumer(config):
     env["POLL_INTERVAL"] = "1"
 
     process = subprocess.Popen(
-        ["python", str(APP)],
+        [sys.executable, str(APP)],
         env=env,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
-        text=True,
+        universal_newlines=True,
     )
 
     return process, data_dir, tmp_dir

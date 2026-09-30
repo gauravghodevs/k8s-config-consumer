@@ -28,8 +28,23 @@ jobs:
       - name: Compile Python files
         run: |
           python -m py_compile consumer/app/main.py
+          python -m py_compile controller/rollout_guard.py
           python -m py_compile tests/test_consumer_contract.py
+          python -m py_compile tests/test_validation.py
+          python -m py_compile tests/test_controller.py
+
+      - name: Run validation tests
+        run: |
+          python tests/test_validation.py
 
       - name: Run consumer contract tests
         run: |
           python tests/test_consumer_contract.py
+
+      - name: Run controller validation tests
+        run: |
+          python tests/test_controller.py
+
+      - name: Build Docker image
+        run: |
+          docker build -t blast-consumer:ci ./consumer
