@@ -41,6 +41,10 @@ jobs:
         run: |
           python tests/test_ci_failure.py
 
+      - name: Run configuration size test
+        run: |
+          python tests/test_config_size.py
+
       - name: Run consumer contract tests
         run: |
           python tests/test_consumer_contract.py

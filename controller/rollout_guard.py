@@ -14,6 +14,9 @@ BAKE_INTERNAL = int(os.getenv("BAKE_INTERNAL", "30"))
 BAKE_1_PERCENT = int(os.getenv("BAKE_1_PERCENT", "60"))
 BAKE_10_PERCENT = int(os.getenv("BAKE_10_PERCENT", "60"))
 
+MAX_CONFIG_SIZE = int(
+    os.getenv("MAX_CONFIG_SIZE", "1048576")
+)
 
 class State(Enum):
     PENDING = "PENDING"
@@ -92,6 +95,20 @@ class PromotionController:
         if not os.path.exists(self.candidate_file):
             raise RuntimeError(
                 f"Candidate file does not exist: {self.candidate_file}"
+            )
+
+        candidate_size = os.path.getsize(
+            self.candidate_file
+        )
+
+        print(
+            f"[VALIDATE] Candidate size={candidate_size} bytes"
+        )
+
+        if candidate_size > MAX_CONFIG_SIZE:
+            raise RuntimeError(
+                f"Candidate configuration exceeds maximum "
+                f"allowed size of {MAX_CONFIG_SIZE} bytes"
             )
 
         import yaml
