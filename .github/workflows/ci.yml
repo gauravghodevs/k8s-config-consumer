@@ -37,6 +37,10 @@ jobs:
         run: |
           python tests/test_validation.py
 
+      - name: Run CI failure guard test
+        run: |
+          python tests/test_ci_failure.py
+
       - name: Run consumer contract tests
         run: |
           python tests/test_consumer_contract.py
