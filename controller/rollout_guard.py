@@ -6,6 +6,7 @@ import os
 import json
 import time
 import hashlib
+import urllib.parse
 from enum import Enum
 from datetime import datetime, timezone
 
@@ -14,6 +15,10 @@ BAKE_INTERNAL = int(os.getenv("BAKE_INTERNAL", "30"))
 BAKE_1_PERCENT = int(os.getenv("BAKE_1_PERCENT", "60"))
 BAKE_10_PERCENT = int(os.getenv("BAKE_10_PERCENT", "60"))
 
+PROMETHEUS_URL = os.getenv(
+    "PROMETHEUS_URL",
+    "http://127.0.0.1:9090"
+)
 # Test-only deterministic runtime failure injection.
 INJECT_RUNTIME_FAILURE = (
     os.getenv("INJECT_RUNTIME_FAILURE", "false").lower() == "true"
@@ -188,6 +193,12 @@ class PromotionController:
 
             previous_content = self.run_cmd(previous_command)
 
+            # run_cmd() strips command output. Restore the ConfigMap
+            # content's trailing newline so rollback preserves the
+            # original configuration bytes.
+            if not previous_content.endswith("\n"):
+                previous_content += "\n"
+
             self.previous_configs[namespace] = previous_content
 
             print(
@@ -348,6 +359,63 @@ class PromotionController:
             f"{namespace} after 5 attempts: {last_error}"
         )
 
+    def query_prometheus(self, query):
+        encoded_query = urllib.parse.quote(query, safe="")
+
+        command = (
+            f"python3 -c "
+            f"\"import urllib.request, json; "
+            f"url='{PROMETHEUS_URL}/api/v1/query?query={encoded_query}'; "
+            f"data=json.loads("
+            f"urllib.request.urlopen(url, timeout=5).read().decode()"
+            f"); "
+            f"print(json.dumps(data))\""
+        )
+
+        output = self.run_cmd(command)
+
+        response = json.loads(output)
+
+        if response.get("status") != "success":
+            raise RuntimeError(
+                f"Prometheus query failed: {response}"
+            )
+
+        return response.get(
+            "data",
+            {}
+        ).get(
+            "result",
+            []
+        )
+
+    def check_prometheus_health(self, namespace):
+        job_name = namespace.replace(
+            "blast-cell-",
+            "rules-consumer-cell-"
+        )
+
+        query = (
+            f'rules_config_loaded{{job="{job_name}"}}'
+        )
+
+        results = self.query_prometheus(query)
+
+        if not results:
+            print(
+                f"[PROMETHEUS] No metric found for {namespace}"
+            )
+            return False
+
+        value = results[0].get("value", [None, "0"])[1]
+
+        print(
+            f"[PROMETHEUS] {namespace} "
+            f"rules_config_loaded={value}"
+        )
+
+        return value == "1"
+
     def check_health(self, namespace, baseline_metrics=None):
         print(
             f"[HEALTH] Checking {namespace}"
@@ -421,6 +489,12 @@ class PromotionController:
         )
 
         if loaded != 1:
+            return False
+
+        if not self.check_prometheus_health(namespace):
+            print(
+                "[HEALTH] Prometheus health gate failed"
+            )
             return False
 
         if baseline_metrics is not None:
