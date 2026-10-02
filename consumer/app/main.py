@@ -51,6 +51,11 @@ FAULT_INJECTION_FILE = Path(
         "/tmp/blast-radius-guard-fault"
     )
 )
+# Deterministic test-only health failure.
+# Disabled by default.
+FORCE_HEALTH_FAILURE = (
+    os.getenv("FORCE_HEALTH_FAILURE", "false").lower() == "true"
+)
 
 
 # ============================================================
@@ -357,8 +362,11 @@ def configuration_watcher():
 def health():
 
     if (
-        ENABLE_FAULT_INJECTION
-        and FAULT_INJECTION_FILE.exists()
+        FORCE_HEALTH_FAILURE
+        or (
+            ENABLE_FAULT_INJECTION
+            and FAULT_INJECTION_FILE.exists()
+        )
     ):
         return jsonify({
             "status": "fault_injected"

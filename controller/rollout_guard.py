@@ -14,6 +14,11 @@ BAKE_INTERNAL = int(os.getenv("BAKE_INTERNAL", "30"))
 BAKE_1_PERCENT = int(os.getenv("BAKE_1_PERCENT", "60"))
 BAKE_10_PERCENT = int(os.getenv("BAKE_10_PERCENT", "60"))
 
+# Test-only deterministic runtime failure injection.
+INJECT_RUNTIME_FAILURE = (
+    os.getenv("INJECT_RUNTIME_FAILURE", "false").lower() == "true"
+)
+
 MAX_CONFIG_SIZE = int(
     os.getenv("MAX_CONFIG_SIZE", "1048576")
 )
@@ -646,6 +651,27 @@ class PromotionController:
             self.apply_to_cell(namespace)
 
             self.wait_for_candidate(namespace)
+
+            if (
+                INJECT_RUNTIME_FAILURE
+                and namespace == "blast-cell-1"
+                and bake_time > 0
+            ):
+                print(
+                    "[TEST] Injecting deterministic runtime health failure "
+                    f"in {namespace}"
+                )
+
+                self.run_cmd(
+                    "kubectl set env deployment/rules-consumer "
+                    f"-n {namespace} "
+                    "FORCE_HEALTH_FAILURE=true"
+                )
+
+                self.run_cmd(
+                    "kubectl rollout status deployment/rules-consumer "
+                    f"-n {namespace} --timeout=60s"
+                )
 
             if bake_time > 0:
 
