@@ -10,6 +10,8 @@ import urllib.parse
 from enum import Enum
 from datetime import datetime, timezone
 
+from controller.s3_store import S3ConfigStore
+
 
 BAKE_INTERNAL = int(os.getenv("BAKE_INTERNAL", "30"))
 BAKE_1_PERCENT = int(os.getenv("BAKE_1_PERCENT", "60"))
@@ -50,6 +52,13 @@ class PromotionController:
 
         self.state_file = "/tmp/blast-radius-guard-state.json"
         self.previous_configs = {}
+
+        self.s3_store = None
+        self.s3_version_id = None
+        self.candidate_hash = None
+
+        if os.getenv("USE_S3", "false").lower() == "true":
+            self.s3_store = S3ConfigStore()
 
     # ---------------------------------------------------------
     # Utility
@@ -163,6 +172,13 @@ class PromotionController:
 
         self.config_version = config["version"]
 
+        with open(self.candidate_file, "rb") as file:
+            candidate_bytes = file.read()
+
+        self.candidate_hash = hashlib.sha256(
+            candidate_bytes
+        ).hexdigest()
+
         print(
             "[VALIDATE] Candidate passed schema and semantic validation"
         )
@@ -170,6 +186,46 @@ class PromotionController:
         print(
             f"[VALIDATE] Config version: {self.config_version}"
         )
+
+        print(
+            f"[VALIDATE] Candidate SHA-256: {self.candidate_hash}"
+        )
+
+        if self.s3_store is not None:
+            print(
+                "[S3] Uploading validated candidate"
+            )
+
+            with open(self.candidate_file, "r") as file:
+                candidate_content = file.read()
+
+            s3_result = self.s3_store.upload_config(
+                self.config_version,
+                candidate_content
+            )
+
+            self.s3_version_id = s3_result["version_id"]
+
+            print(
+                f"[S3] Stored: {s3_result['key']}"
+            )
+
+            print(
+                f"[S3] VersionId: {self.s3_version_id}"
+            )
+
+            print(
+                f"[S3] SHA-256: {s3_result['sha256']}"
+            )
+
+            if s3_result["sha256"] != self.candidate_hash:
+                raise RuntimeError(
+                    "S3 SHA-256 does not match candidate"
+                )
+
+            print(
+                "[S3] Integrity verification passed"
+            )
 
         self.save_state()
 
@@ -509,10 +565,12 @@ class PromotionController:
                 )
                 return False
 
-        with open(self.candidate_file, "rb") as file:
-            candidate_hash = hashlib.sha256(
-                file.read()
-            ).hexdigest()
+        if self.candidate_hash is None:
+            raise RuntimeError(
+                "Candidate SHA-256 has not been calculated"
+            )
+
+        candidate_hash = self.candidate_hash
 
         # Re-select the pod instead of reusing an old pod.
         pod = self.get_pod(namespace)
