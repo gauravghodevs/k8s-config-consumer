@@ -7,13 +7,3 @@ venv/
 /tmp/
 .DS_Store
 kubeconfig
-EOFcat > .gitignore <<'EOF'
-__pycache__/
-*.py[cod]
-.venv/
-venv/
-.env
-*.log
-/tmp/
-.DS_Store
-kubeconfig
