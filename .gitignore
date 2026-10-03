@@ -7,3 +7,18 @@ venv/
 /tmp/
 .DS_Store
 kubeconfig
+
+# Signing keys
+security/keys/
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars

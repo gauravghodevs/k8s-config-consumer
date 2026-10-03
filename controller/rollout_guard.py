@@ -11,6 +11,7 @@ from enum import Enum
 from datetime import datetime, timezone
 
 from controller.s3_store import S3ConfigStore
+from controller.signing import load_public_key, verify_bytes
 
 
 BAKE_INTERNAL = int(os.getenv("BAKE_INTERNAL", "30"))
@@ -28,6 +29,15 @@ INJECT_RUNTIME_FAILURE = (
 
 MAX_CONFIG_SIZE = int(
     os.getenv("MAX_CONFIG_SIZE", "1048576")
+)
+
+REQUIRE_SIGNATURE = (
+    os.getenv("REQUIRE_SIGNATURE", "false").lower() == "true"
+)
+
+PUBLIC_KEY_PATH = os.getenv(
+    "PUBLIC_KEY_PATH",
+    "security/public/ed25519-public.pem"
 )
 
 class State(Enum):
@@ -190,6 +200,46 @@ class PromotionController:
         print(
             f"[VALIDATE] Candidate SHA-256: {self.candidate_hash}"
         )
+
+        if REQUIRE_SIGNATURE:
+            signature_path = f"{self.candidate_file}.sig"
+
+            print(
+                f"[SIGNATURE] Verifying: {signature_path}"
+            )
+
+            if not os.path.exists(signature_path):
+                raise RuntimeError(
+                    f"Signature file does not exist: {signature_path}"
+                )
+
+            try:
+                public_key = load_public_key(
+                    PUBLIC_KEY_PATH
+                )
+
+                with open(signature_path, "r") as file:
+                    signature = file.read().strip()
+
+                signature_valid = verify_bytes(
+                    candidate_bytes,
+                    signature,
+                    public_key
+                )
+
+            except Exception as error:
+                raise RuntimeError(
+                    f"Signature verification failed: {error}"
+                )
+
+            if not signature_valid:
+                raise RuntimeError(
+                    "Candidate signature is invalid"
+                )
+
+            print(
+                "[SIGNATURE] Ed25519 verification passed"
+            )
 
         if self.s3_store is not None:
             print(
