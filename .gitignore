@@ -17,8 +17,3 @@ security/keys/
 *.tfstate.*
 *.tfvars
 
-# Terraform
-.terraform/
-*.tfstate
-*.tfstate.*
-*.tfvars
