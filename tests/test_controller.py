@@ -8,6 +8,7 @@ CONTROLLER_DIR = BASE_DIR / "controller"
 
 sys.path.insert(0, str(CONTROLLER_DIR))
 
+import rollout_guard
 from rollout_guard import PromotionController
 
 
@@ -43,6 +44,70 @@ def test_invalid_candidate_validation():
     else:
         raise AssertionError(
             "Invalid candidate unexpectedly passed controller validation"
+        )
+
+
+def test_missing_signature_is_rejected(monkeypatch, tmp_path):
+    candidate = tmp_path / "candidate.yaml"
+
+    candidate.write_bytes(
+        VALID_CANDIDATE.read_bytes()
+    )
+
+    monkeypatch.setattr(
+        rollout_guard,
+        "REQUIRE_SIGNATURE",
+        True,
+    )
+
+    controller = PromotionController(
+        str(candidate)
+    )
+
+    try:
+        controller.validate_candidate()
+    except RuntimeError as error:
+        assert "Signature file does not exist" in str(error)
+    else:
+        raise AssertionError(
+            "Unsigned candidate unexpectedly passed validation"
+        )
+
+
+def test_invalid_signature_is_rejected(monkeypatch, tmp_path):
+    candidate = tmp_path / "candidate.yaml"
+    signature = tmp_path / "candidate.yaml.sig"
+
+    candidate.write_bytes(
+        VALID_CANDIDATE.read_bytes()
+    )
+
+    signature.write_text(
+        "invalid-signature"
+    )
+
+    monkeypatch.setattr(
+        rollout_guard,
+        "REQUIRE_SIGNATURE",
+        True,
+    )
+
+    controller = PromotionController(
+        str(candidate)
+    )
+
+    try:
+        controller.validate_candidate()
+    except RuntimeError as error:
+        assert (
+            "Candidate signature is invalid"
+            in str(error)
+            or "Signature verification failed"
+            in str(error)
+        )
+    else:
+        raise AssertionError(
+            "Invalid signature unexpectedly passed validation"
         )
 
 

@@ -130,7 +130,7 @@ These percentages represent **logical rollout stages in the local simulation**, 
 * Ed25519 configuration signing
 * Detached `.sig` files
 * Public-key verification
-* Optional mandatory signature enforcement
+* Configurable signature enforcement for production deployments
 * Private signing key excluded from Git
 * Tampered configuration rejection
 
@@ -685,13 +685,20 @@ controller/.venv/bin/pytest -q tests/test_signing.py
 Expected:
 
 ```text
-2 passed
+4 passed
 ```
 
 The signing tests verify:
 
 1. Valid Ed25519 signatures are accepted.
 2. Tampered configuration content fails verification.
+3. A signature cannot be verified with the wrong public key.
+4. Malformed signature data is rejected.
+
+Controller-level tests additionally verify:
+
+1. Unsigned candidates are rejected when `REQUIRE_SIGNATURE=true`.
+2. Invalid signatures are rejected when `REQUIRE_SIGNATURE=true`.
 
 ---
 
@@ -928,7 +935,7 @@ The implementation currently includes:
 * Terraform AWS infrastructure
 * least-privilege S3 IAM policy
 * Ed25519 signing and verification
-* mandatory signature enforcement
+* production-mode signature enforcement
 * Prometheus-compatible metrics
 * automated tests
 
