@@ -91,6 +91,23 @@ class PromotionController:
 
         return result.stdout.strip()
 
+    def run_cmd_raw(self, cmd):
+        result = subprocess.run(
+            cmd,
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=False
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                f"Command failed:\n{cmd}\n\n"
+                f"Error:\n{result.stderr.decode(errors='replace')}"
+            )
+
+        return result.stdout
+
     def transition(self, new_state):
         print(
             f"[STATE] {self.status.value} -> {new_state.value}"
@@ -289,7 +306,8 @@ class PromotionController:
             f"to {namespace}"
         )
 
-        # Save the original configuration once per cell
+        # Save the original configuration once per cell.
+        # Capture raw bytes so rollback can verify exact content.
         if namespace not in self.previous_configs:
             previous_command = (
                 f"kubectl get configmap rules-config "
@@ -297,19 +315,24 @@ class PromotionController:
                 f"-o jsonpath='{{.data.rules\\.yaml}}'"
             )
 
-            previous_content = self.run_cmd(previous_command)
+            previous_bytes = self.run_cmd_raw(previous_command)
 
-            # run_cmd() strips command output. Restore the ConfigMap
-            # content's trailing newline so rollback preserves the
-            # original configuration bytes.
-            if not previous_content.endswith("\n"):
-                previous_content += "\n"
+            previous_hash = hashlib.sha256(
+                previous_bytes
+            ).hexdigest()
 
-            self.previous_configs[namespace] = previous_content
+            self.previous_configs[namespace] = {
+                "content": previous_bytes,
+                "sha256": previous_hash,
+            }
 
             print(
                 f"[ROLLBACK] Saved previous configuration "
                 f"for {namespace}"
+            )
+
+            print(
+                f"[ROLLBACK] Previous SHA-256: {previous_hash}"
             )
 
         with open(self.candidate_file) as file:
@@ -748,13 +771,17 @@ class PromotionController:
             )
             return
 
-        for namespace, content in reversed(
+        for namespace, rollback_data in reversed(
             list(self.previous_configs.items())
         ):
             print(
                 f"[ROLLBACK] Restoring {namespace}"
             )
 
+            previous_bytes = rollback_data["content"]
+            expected_hash = rollback_data["sha256"]
+
+            content = previous_bytes.decode("utf-8")
             escaped = json.dumps(content)
 
             patch = (
@@ -786,6 +813,38 @@ class PromotionController:
             )
 
             self.run_cmd(rollout_wait_command)
+
+            # Verify the restored ConfigMap against the exact
+            # previously captured SHA-256.
+            verify_command = (
+                f"kubectl get configmap rules-config "
+                f"-n {namespace} "
+                f"-o jsonpath='{{.data.rules\\.yaml}}'"
+            )
+
+            restored_bytes = self.run_cmd_raw(
+                verify_command
+            )
+
+            restored_hash = hashlib.sha256(
+                restored_bytes
+            ).hexdigest()
+
+            print(
+                f"[ROLLBACK] Restored SHA-256: {restored_hash}"
+            )
+
+            if restored_hash != expected_hash:
+                raise RuntimeError(
+                    f"Rollback integrity verification failed "
+                    f"for {namespace}: "
+                    f"expected {expected_hash}, "
+                    f"got {restored_hash}"
+                )
+
+            print(
+                f"[ROLLBACK] Integrity verified for {namespace}"
+            )
 
             print(
                 f"[ROLLBACK] Restored {namespace}"
