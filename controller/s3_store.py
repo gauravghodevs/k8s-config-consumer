@@ -72,6 +72,32 @@ class S3ConfigStore:
             "sha256": sha256
         }
 
+    def upload_signature(self, version, signature):
+        key = (
+            f"{self.prefix}/"
+            f"version-{version}/"
+            f"rules.yaml.sig"
+        )
+
+        body = signature.encode("utf-8")
+
+        response = self.client.put_object(
+            Bucket=self.bucket,
+            Key=key,
+            Body=body,
+            ContentType="text/plain",
+            Metadata={
+                "config-version": str(version)
+            }
+        )
+
+        return {
+            "bucket": self.bucket,
+            "key": key,
+            "version_id": response.get("VersionId"),
+            "etag": response.get("ETag", "").strip('"'),
+        }
+
     def download_config(self, version, version_id=None):
         key = self.key_for_version(version)
 
@@ -94,6 +120,36 @@ class S3ConfigStore:
             "sha256": hashlib.sha256(
                 content.encode("utf-8")
             ).hexdigest()
+        }
+
+    def download_signature(self, version, version_id=None):
+        key = (
+            f"{self.prefix}/"
+            f"version-{version}/"
+            f"rules.yaml.sig"
+        )
+
+        request = {
+            "Bucket": self.bucket,
+            "Key": key
+        }
+
+        if version_id:
+            request["VersionId"] = version_id
+
+        response = self.client.get_object(**request)
+
+        signature = (
+            response["Body"]
+            .read()
+            .decode("utf-8")
+            .strip()
+        )
+
+        return {
+            "signature": signature,
+            "version_id": response.get("VersionId"),
+            "etag": response.get("ETag", "").strip('"'),
         }
 
     def config_exists(self, version, version_id=None):

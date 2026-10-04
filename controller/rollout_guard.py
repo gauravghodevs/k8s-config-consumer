@@ -294,6 +294,38 @@ class PromotionController:
                 "[S3] Integrity verification passed"
             )
 
+            if REQUIRE_SIGNATURE:
+                signature_path = (
+                    f"{self.candidate_file}.sig"
+                )
+
+                with open(
+                    signature_path,
+                    "r"
+                ) as file:
+                    signature = file.read().strip()
+
+                signature_result = (
+                    self.s3_store.upload_signature(
+                        self.config_version,
+                        signature
+                    )
+                )
+
+                print(
+                    f"[S3] Signature stored: "
+                    f"{signature_result['key']}"
+                )
+
+                print(
+                    f"[S3] Signature VersionId: "
+                    f"{signature_result['version_id']}"
+                )
+
+                print(
+                    "[S3] Signed artifact pair stored"
+                )
+
         self.save_state()
 
     # ---------------------------------------------------------
