@@ -5,6 +5,7 @@ import sys
 import os
 import json
 import time
+import base64
 import hashlib
 import urllib.parse
 from enum import Enum
@@ -70,6 +71,8 @@ class PromotionController:
         if os.getenv("USE_S3", "false").lower() == "true":
             self.s3_store = S3ConfigStore()
 
+        self.load_state()
+
     # ---------------------------------------------------------
     # Utility
     # ---------------------------------------------------------
@@ -117,15 +120,105 @@ class PromotionController:
         self.save_state()
 
     def save_state(self):
+        previous_configs = {}
+
+        for namespace, rollback_data in (
+            self.previous_configs.items()
+        ):
+            previous_configs[namespace] = {
+                "content": base64.b64encode(
+                    rollback_data["content"]
+                ).decode("ascii"),
+                "sha256": rollback_data["sha256"],
+            }
+
         state = {
             "configVersion": self.config_version,
             "stage": self.stage,
             "status": self.status.value,
-            "startedAt": self.started_at
+            "startedAt": self.started_at,
+            "previousConfigs": previous_configs,
         }
 
-        with open(self.state_file, "w") as file:
+        temp_file = f"{self.state_file}.tmp"
+
+        with open(temp_file, "w") as file:
             json.dump(state, file, indent=2)
+            file.flush()
+            os.fsync(file.fileno())
+
+        os.replace(
+            temp_file,
+            self.state_file
+        )
+
+    def load_state(self):
+        if not os.path.exists(self.state_file):
+            return
+
+        with open(self.state_file, "r") as file:
+            state = json.load(file)
+
+        self.config_version = state.get(
+            "configVersion",
+            self.config_version
+        )
+
+        self.stage = state.get(
+            "stage",
+            self.stage
+        )
+
+        status = state.get("status")
+
+        if status:
+            self.status = State(status)
+
+        self.started_at = state.get(
+            "startedAt",
+            self.started_at
+        )
+
+        previous_configs = state.get(
+            "previousConfigs",
+            {}
+        )
+
+        restored_configs = {}
+
+        for namespace, rollback_data in (
+            previous_configs.items()
+        ):
+            content = base64.b64decode(
+                rollback_data["content"]
+            )
+
+            actual_hash = hashlib.sha256(
+                content
+            ).hexdigest()
+
+            expected_hash = rollback_data["sha256"]
+
+            if actual_hash != expected_hash:
+                raise RuntimeError(
+                    f"Persisted rollback state integrity "
+                    f"check failed for {namespace}: "
+                    f"expected {expected_hash}, "
+                    f"got {actual_hash}"
+                )
+
+            restored_configs[namespace] = {
+                "content": content,
+                "sha256": expected_hash,
+            }
+
+        self.previous_configs = restored_configs
+
+        print(
+            f"[STATE] Recovered "
+            f"{len(self.previous_configs)} "
+            f"rollback configuration(s)"
+        )
 
     # ---------------------------------------------------------
     # Validation
