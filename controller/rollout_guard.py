@@ -548,12 +548,10 @@ class PromotionController:
 
         self.run_cmd(restart_command)
 
-        rollout_wait_command = (
-            f"kubectl rollout status deployment/rules-consumer "
-            f"-n {namespace} --timeout=60s"
+        self.wait_for_deployment_ready(
+            namespace,
+            timeout=60
         )
-
-        self.run_cmd(rollout_wait_command)
 
         print(
             f"[K8S] Consumer restarted in {namespace}"
@@ -561,6 +559,48 @@ class PromotionController:
 
         print(
             f"[K8S] Candidate applied to {namespace}"
+        )
+
+    def wait_for_deployment_ready(self, namespace, timeout=60):
+        """Wait for the Deployment controller to observe and complete the restart."""
+        deadline = time.time() + timeout
+
+        while time.time() < deadline:
+            command = (
+                "kubectl get deployment rules-consumer "
+                f"-n {namespace} "
+                "-o jsonpath='{.metadata.generation}{\" \"}"
+                "{.status.observedGeneration}{\" \"}"
+                "{.spec.replicas}{\" \"}"
+                "{.status.updatedReplicas}{\" \"}"
+                "{.status.readyReplicas}{\" \"}"
+                "{.status.availableReplicas}'"
+            )
+
+            output = self.run_cmd_raw(command).decode("utf-8").strip()
+            values = output.split()
+
+            if len(values) == 6:
+                generation = int(values[0])
+                observed_generation = int(values[1])
+                desired = int(values[2])
+                updated = int(values[3] or 0)
+                ready = int(values[4] or 0)
+                available = int(values[5] or 0)
+
+                if (
+                    observed_generation == generation
+                    and updated == desired
+                    and ready == desired
+                    and available == desired
+                ):
+                    return
+
+            time.sleep(1)
+
+        raise RuntimeError(
+            f"Deployment rules-consumer did not become ready "
+            f"in {namespace} within {timeout}s"
         )
 
     # ---------------------------------------------------------
@@ -993,12 +1033,10 @@ class PromotionController:
 
             self.run_cmd(restart_command)
 
-            rollout_wait_command = (
-                f"kubectl rollout status deployment/rules-consumer "
-                f"-n {namespace} --timeout=60s"
+            self.wait_for_deployment_ready(
+                namespace,
+                timeout=60
             )
-
-            self.run_cmd(rollout_wait_command)
 
             # Verify the restored ConfigMap against the exact
             # previously captured SHA-256.
@@ -1095,9 +1133,9 @@ class PromotionController:
                     "FORCE_HEALTH_FAILURE=true"
                 )
 
-                self.run_cmd(
-                    "kubectl rollout status deployment/rules-consumer "
-                    f"-n {namespace} --timeout=60s"
+                self.wait_for_deployment_ready(
+                    namespace,
+                    timeout=60
                 )
 
             if bake_time > 0:
