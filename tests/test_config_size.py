@@ -1,13 +1,9 @@
 import os
-import sys
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-CONTROLLER_DIR = BASE_DIR / "controller"
 
-sys.path.insert(0, str(CONTROLLER_DIR))
-
-from rollout_guard import PromotionController
+from controller.rollout_guard import PromotionController
 
 
 OVERSIZED_CANDIDATE = (

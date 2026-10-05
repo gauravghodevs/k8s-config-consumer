@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 
 from controller.s3_store import S3ConfigStore
 from controller.signing import load_public_key, verify_bytes
+from prometheus_client import Counter, Histogram, start_http_server
 
 
 BAKE_INTERNAL = int(os.getenv("BAKE_INTERNAL", "30"))
@@ -40,6 +41,42 @@ PUBLIC_KEY_PATH = os.getenv(
     "PUBLIC_KEY_PATH",
     "security/public/ed25519-public.pem"
 )
+
+METRICS_PORT = int(
+    os.getenv("METRICS_PORT", "8000")
+)
+
+
+rollouts_total = Counter(
+    "blast_radius_rollouts_total",
+    "Total number of rollout attempts"
+)
+
+rollouts_success_total = Counter(
+    "blast_radius_rollouts_success_total",
+    "Total number of successful rollouts"
+)
+
+rollouts_halted_total = Counter(
+    "blast_radius_rollouts_halted_total",
+    "Total number of halted rollouts"
+)
+
+rollbacks_total = Counter(
+    "blast_radius_rollbacks_total",
+    "Total number of rollback attempts"
+)
+
+signature_failures_total = Counter(
+    "blast_radius_signature_failures_total",
+    "Total number of signature verification failures"
+)
+
+rollout_duration_seconds = Histogram(
+    "blast_radius_rollout_duration_seconds",
+    "Rollout execution duration in seconds"
+)
+
 
 class State(Enum):
     PENDING = "PENDING"
@@ -70,6 +107,7 @@ class PromotionController:
         self.s3_store = None
         self.s3_version_id = None
         self.candidate_hash = None
+        self.metrics_server_started = False
 
         if os.getenv("USE_S3", "false").lower() == "true":
             self.s3_store = S3ConfigStore()
@@ -79,6 +117,18 @@ class PromotionController:
     # ---------------------------------------------------------
     # Utility
     # ---------------------------------------------------------
+
+    def start_metrics_server(self):
+        if self.metrics_server_started:
+            return
+
+        start_http_server(METRICS_PORT)
+        self.metrics_server_started = True
+
+        print(
+            f"[METRICS] Prometheus endpoint listening on "
+            f"0.0.0.0:{METRICS_PORT}"
+        )
 
     def run_cmd(self, cmd):
         result = subprocess.run(
@@ -327,6 +377,7 @@ class PromotionController:
             )
 
             if not os.path.exists(signature_path):
+                signature_failures_total.inc()
                 raise RuntimeError(
                     f"Signature file does not exist: {signature_path}"
                 )
@@ -346,11 +397,13 @@ class PromotionController:
                 )
 
             except Exception as error:
+                signature_failures_total.inc()
                 raise RuntimeError(
                     f"Signature verification failed: {error}"
                 )
 
             if not signature_valid:
+                signature_failures_total.inc()
                 raise RuntimeError(
                     "Candidate signature is invalid"
                 )
@@ -1077,6 +1130,11 @@ class PromotionController:
 
     def run(self):
 
+        self.start_metrics_server()
+
+        rollout_start = time.monotonic()
+        rollouts_total.inc()
+
         print("=" * 70)
         print("BLAST RADIUS GUARD — PROMOTION CONTROLLER")
         print("=" * 70)
@@ -1087,11 +1145,15 @@ class PromotionController:
 
             self.promote()
 
+            rollouts_success_total.inc()
+
             print("=" * 70)
             print("PROMOTION COMPLETED")
             print("=" * 70)
 
         except Exception as error:
+
+            rollouts_halted_total.inc()
 
             print(
                 f"\n[FAILURE] {error}"
@@ -1100,6 +1162,7 @@ class PromotionController:
             self.transition(State.HALTED)
 
             try:
+                rollbacks_total.inc()
                 self.rollback()
             except Exception as rollback_error:
                 print(
@@ -1111,6 +1174,11 @@ class PromotionController:
             print("=" * 70)
 
             return 2
+
+        finally:
+            rollout_duration_seconds.observe(
+                time.monotonic() - rollout_start
+            )
 
         return 0
 

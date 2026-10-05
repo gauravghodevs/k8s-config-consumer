@@ -4,12 +4,9 @@ from pathlib import Path
 
 
 BASE_DIR = Path(__file__).resolve().parents[1]
-CONTROLLER_DIR = BASE_DIR / "controller"
 
-sys.path.insert(0, str(CONTROLLER_DIR))
-
-import rollout_guard
-from rollout_guard import PromotionController
+from controller import rollout_guard
+from controller.rollout_guard import PromotionController
 
 
 VALID_CANDIDATE = (
