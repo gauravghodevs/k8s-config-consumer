@@ -61,7 +61,10 @@ class PromotionController:
         self.status = State.PENDING
         self.started_at = datetime.now(timezone.utc).isoformat()
 
-        self.state_file = "/tmp/blast-radius-guard-state.json"
+        self.state_file = os.getenv(
+            "STATE_FILE",
+            "/tmp/blast-radius-guard-state.json"
+        )
         self.previous_configs = {}
 
         self.s3_store = None
@@ -156,8 +159,13 @@ class PromotionController:
         if not os.path.exists(self.state_file):
             return
 
-        with open(self.state_file, "r") as file:
-            state = json.load(file)
+        try:
+            with open(self.state_file, "r") as file:
+                state = json.load(file)
+        except (OSError, json.JSONDecodeError) as error:
+            raise RuntimeError(
+                f"Persisted rollout state could not be loaded: {error}"
+            ) from error
 
         self.config_version = state.get(
             "configVersion",

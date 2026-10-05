@@ -247,3 +247,51 @@ def test_save_state_uses_atomic_replace(tmp_path):
     assert state["configVersion"] == "1.4"
     assert state["stage"] == "1%"
     assert state["status"] == "HEALTHY"
+
+
+def test_state_file_can_be_configured(monkeypatch, tmp_path):
+    state_file = tmp_path / "custom-state.json"
+
+    monkeypatch.setenv(
+        "STATE_FILE",
+        str(state_file)
+    )
+
+    controller = PromotionController(
+        "config/candidate-v1.4.yaml"
+    )
+
+    assert controller.state_file == str(state_file)
+
+
+def test_corrupted_state_file_is_rejected(tmp_path):
+    state_file = (
+        tmp_path /
+        "blast-radius-guard-state.json"
+    )
+
+    candidate = (
+        tmp_path /
+        "candidate.yaml"
+    )
+
+    candidate.write_text(
+        'version: "1.4"\n'
+    )
+
+    state_file.write_text(
+        '{"configVersion": "1.4", "stage": '
+        '"10%", BROKEN'
+    )
+
+    controller = PromotionController(
+        str(candidate)
+    )
+
+    controller.state_file = str(state_file)
+
+    with pytest.raises(
+        RuntimeError,
+        match="Persisted rollout state could not be loaded",
+    ):
+        controller.load_state()
