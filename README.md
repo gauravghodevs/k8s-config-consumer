@@ -581,7 +581,26 @@ rules_config_reload_failure_total
 rules_config_last_reload_timestamp
 ```
 
-The controller uses health/readiness information together with configuration integrity checks during rollout.
+The controller also exposes rollout metrics:
+
+```text
+blast_radius_rollouts_total
+blast_radius_rollouts_success_total
+blast_radius_rollouts_halted_total
+blast_radius_rollbacks_total
+blast_radius_signature_failures_total
+blast_radius_rollout_duration_seconds
+```
+
+Prometheus is configured to scrape the three consumer cells.
+
+For the local Kind demonstration, start the Prometheus port-forward:
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
+```
+
+The controller endpoint is configurable with `PROMETHEUS_URL`. For an in-cluster deployment, point it at the Prometheus Kubernetes Service instead of localhost.
 
 ---
 
@@ -670,11 +689,13 @@ Run the complete test suite:
 controller/.venv/bin/pytest -q
 ```
 
-Current verified result:
+Latest verified regression result:
 
 ```text
-11 passed
+28 passed in 15.70s
 ```
+
+The suite covers validation, controller behavior, signing, S3 storage, durable state recovery, observability, consumer contracts, configuration-size protection, CI failure handling, and deployment-readiness behavior.
 
 Run signing tests specifically:
 
@@ -771,6 +792,7 @@ blast-radius-guard/
 │
 ├── tests/
 │   ├── test_signing.py
+│   ├── test_deployment_readiness.py
 │   └── ...
 │
 ├── .github/
