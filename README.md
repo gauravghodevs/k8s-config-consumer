@@ -949,17 +949,30 @@ Failure from validation or promotion
 The implementation currently includes:
 
 * Kubernetes configuration consumer
-* staged rollout controller
-* health-gated promotion
-* deterministic rollback testing
+* JSON Schema and semantic validation
+* duplicate and dangerous-rule detection
+* configuration-size protection
 * SHA-256 integrity verification
-* S3-backed configuration storage
-* Terraform AWS infrastructure
-* least-privilege S3 IAM policy
+* last-known-good configuration handling
+* staged rollout controller
+* logical INTERNAL → 1% → 10% → 100% promotion
+* configurable bake periods
+* health and readiness gates
+* Kubernetes deployment readiness checks
+* deterministic runtime failure testing
+* automatic HALTED → ROLLING_BACK behavior
+* cross-cell rollback
+* rollback SHA-256 integrity verification
+* S3-backed versioned configuration artifacts
 * Ed25519 signing and verification
 * production-mode signature enforcement
-* Prometheus-compatible metrics
-* automated tests
+* durable rollout state persistence
+* controller restart recovery
+* Prometheus-compatible controller and consumer metrics
+* Terraform AWS infrastructure
+* least-privilege S3 IAM policy
+* GitHub Actions CI validation
+* 28 automated tests
 
 The repository is intended as a **production-style DevOps/SRE engineering project and local simulation**, not as a claim that the local Kind environment itself represents a production deployment.
 
