@@ -2,7 +2,7 @@
 
 > **Safe configuration delivery for distributed Kubernetes systems.**
 
-Blast-Radius Guard is a **production-style DevOps/SRE engineering project** that prevents unsafe configuration changes from propagating across every deployment cell at once.
+Blast-Radius Guard is a **production-style DevOps engineering project** that prevents unsafe configuration changes from propagating across every deployment cell at once.
 
 It combines **schema + semantic validation, SHA-256 integrity verification, Ed25519 signing, staged promotion, health gates, Prometheus observability, versioned S3 artifacts, and automatic cross-cell rollback** into one reproducible rollout workflow.
 
@@ -10,7 +10,7 @@ It combines **schema + semantic validation, SHA-256 integrity verification, Ed25
   <a href="https://github.com/gauravghodevs/k8s-config-consumer/actions/workflows/ci.yml">
     <img src="https://img.shields.io/github/actions/workflow/status/gauravghodevs/k8s-config-consumer/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI">
   </a>
-  <img src="https://img.shields.io/badge/tests-28%20passing-2ea44f?style=for-the-badge&logo=pytest" alt="28 tests passing">
+  <img src="https://img.shields.io/badge/tests-31%20passing-2ea44f?style=for-the-badge&logo=pytest" alt="31 tests passing">
   <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes Kind">
   <img src="https://img.shields.io/badge/AWS-S3-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white" alt="AWS S3">
   <img src="https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform">
@@ -19,7 +19,7 @@ It combines **schema + semantic validation, SHA-256 integrity verification, Ed25
 
 ---
 
-## 🎯 The Problem
+## The Problem
 
 A configuration can be **syntactically valid and still be operationally dangerous**.
 
@@ -60,7 +60,7 @@ Failure → HALT → ROLLBACK
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -110,7 +110,7 @@ The rollout percentages are **logical stages in the local simulation**, not actu
 
 ---
 
-## 🚦 Rollout Flow
+## Rollout Flow
 
 ```text
 PENDING
@@ -150,7 +150,7 @@ A failed stage does **not** continue to later cells.
 
 ---
 
-## 🛡️ Safety Controls
+## Deployment Controls
 
 | Control | Purpose |
 |---|---|
@@ -170,7 +170,7 @@ A failed stage does **not** continue to later cells.
 
 ---
 
-## 🔐 Configuration Security
+## Configuration Integrity
 
 ### Ed25519 signing
 
@@ -206,7 +206,7 @@ This protects the boundary between validation and artifact storage.
 
 ---
 
-## ☁️ AWS / Terraform
+## AWS / Terraform
 
 The project integrates versioned S3 storage for validated configuration artifacts.
 
@@ -232,7 +232,7 @@ Terraform state and sensitive variable files are excluded from Git.
 
 ---
 
-## 📈 Observability
+## Observability
 
 The consumer exposes Prometheus-compatible metrics through:
 
@@ -265,7 +265,7 @@ Prometheus is configured to scrape all three simulated Kubernetes cells.
 
 ---
 
-## 💥 Failure Handling
+## Failure Handling
 
 The project includes **deterministic runtime failure injection** so the safety path can be tested repeatedly.
 
@@ -302,12 +302,12 @@ The rollback path is deliberately reproducible rather than relying on an acciden
 
 ---
 
-## 🧪 Verification
+## Verification
 
 The latest verified regression run:
 
 ```text
-28 passed
+31 passed
 ```
 
 Run the complete suite:
@@ -351,7 +351,7 @@ Build Docker image
 
 ---
 
-## 🧰 Technology Stack
+## Technology Stack
 
 | Layer | Technology |
 |---|---|
@@ -371,7 +371,7 @@ Build Docker image
 
 ---
 
-## 📁 Project Structure
+## Project Structure
 
 ```text
 blast-radius-guard/
@@ -420,7 +420,7 @@ blast-radius-guard/
 
 ---
 
-## 🚀 Quick Start
+## Quick Start
 
 ### 1. Create the local Kubernetes cluster
 
@@ -473,7 +473,7 @@ config/candidate-v1.4.yaml
 
 ---
 
-## 🔍 Useful Verification Commands
+## Useful Verification Commands
 
 Check the Kubernetes cells:
 
@@ -497,7 +497,7 @@ kubectl port-forward -n monitoring svc/prometheus 9090:9090
 
 ---
 
-## ⚠️ Scope & Engineering Note
+## Scope & Engineering Note
 
 This repository is intentionally a **production-style local simulation**.
 
@@ -507,9 +507,9 @@ The `INTERNAL → 1% → 10% → 100%` percentages are logical rollout stages in
 
 ---
 
-## 💡 What This Project Demonstrates
+## What This Project Demonstrates
 
-This project is designed to demonstrate practical DevOps/SRE engineering around:
+This project is designed to demonstrate practical DevOps engineering around:
 
 **Safe delivery**
 → progressive rollout  
@@ -535,16 +535,16 @@ This project is designed to demonstrate practical DevOps/SRE engineering around:
 
 ---
 
-## 👨‍💻 Author
+## Author
 
 **Gaurav Ghodage**
 
-DevOps Engineer · SRE · Kubernetes · AWS
+DevOps Engineer · Kubernetes · AWS
 
 [GitHub Profile](https://github.com/gauravghodevs)
 
 ---
 
-## 📜 License
+## License
 
 This project is provided for engineering, learning, and demonstration purposes.
