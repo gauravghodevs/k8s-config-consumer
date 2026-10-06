@@ -164,6 +164,47 @@ class PromotionController:
 
         return result.stdout
 
+    def patch_configmap_bytes(self, namespace, content_bytes):
+        try:
+            content = content_bytes.decode("utf-8")
+        except UnicodeDecodeError as error:
+            raise RuntimeError(
+                f"ConfigMap content is not valid UTF-8: {error}"
+            ) from error
+
+        patch = json.dumps({
+            "data": {
+                "rules.yaml": content
+            }
+        })
+
+        result = subprocess.run(
+            [
+                "kubectl",
+                "patch",
+                "configmap",
+                "rules-config",
+                "-n",
+                namespace,
+                "--type",
+                "merge",
+                "-p",
+                patch,
+            ],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+
+        if result.returncode != 0:
+            raise RuntimeError(
+                "ConfigMap patch failed:\n"
+                + result.stderr.decode(
+                    "utf-8",
+                    errors="replace"
+                )
+            )
+
     def transition(self, new_state):
         print(
             f"[STATE] {self.status.value} -> {new_state.value}"
@@ -521,25 +562,13 @@ class PromotionController:
                 f"[ROLLBACK] Previous SHA-256: {previous_hash}"
             )
 
-        with open(self.candidate_file) as file:
-            content = file.read()
+        with open(self.candidate_file, "rb") as file:
+            candidate_bytes = file.read()
 
-        escaped = json.dumps(content)
-
-        patch = (
-            '{"data":{"rules.yaml":'
-            + escaped +
-            '}}'
+        self.patch_configmap_bytes(
+            namespace,
+            candidate_bytes
         )
-
-        command = (
-            f"kubectl patch configmap rules-config "
-            f"-n {namespace} "
-            f"--type merge "
-            f"-p '{patch}'"
-        )
-
-        self.run_cmd(command)
 
         restart_command = (
             f"kubectl rollout restart deployment/rules-consumer "
@@ -1007,23 +1036,10 @@ class PromotionController:
             previous_bytes = rollback_data["content"]
             expected_hash = rollback_data["sha256"]
 
-            content = previous_bytes.decode("utf-8")
-            escaped = json.dumps(content)
-
-            patch = (
-                '{"data":{"rules.yaml":'
-                + escaped +
-                '}}'
+            self.patch_configmap_bytes(
+                namespace,
+                previous_bytes
             )
-
-            command = (
-                f"kubectl patch configmap rules-config "
-                f"-n {namespace} "
-                f"--type merge "
-                f"-p '{patch}'"
-            )
-
-            self.run_cmd(command)
 
             # Restart so the restored ConfigMap becomes active.
             restart_command = (
