@@ -1,349 +1,194 @@
 # Blast-Radius Guard
 
-> Staged configuration delivery with automatic validation, health-gated promotion, integrity verification, signed configuration enforcement, and cross-cell rollback for Kubernetes-based platform/SRE systems.
+> **Safe configuration delivery for distributed Kubernetes systems.**
 
-## Overview
+Blast-Radius Guard is a **production-style DevOps/SRE engineering project** that prevents unsafe configuration changes from propagating across every deployment cell at once.
 
-Blast-Radius Guard is a production-style configuration rollout controller implemented as a local Kubernetes simulation.
+It combines **schema + semantic validation, SHA-256 integrity verification, Ed25519 signing, staged promotion, health gates, Prometheus observability, versioned S3 artifacts, and automatic cross-cell rollback** into one reproducible rollout workflow.
 
-The system prevents a configuration that is syntactically valid but operationally unsafe from being immediately propagated across every deployment cell.
+<p align="left">
+  <a href="https://github.com/gauravghodevs/k8s-config-consumer/actions/workflows/ci.yml">
+    <img src="https://img.shields.io/github/actions/workflow/status/gauravghodevs/k8s-config-consumer/ci.yml?branch=main&style=for-the-badge&label=CI" alt="CI">
+  </a>
+  <img src="https://img.shields.io/badge/tests-28%20passing-2ea44f?style=for-the-badge&logo=pytest" alt="28 tests passing">
+  <img src="https://img.shields.io/badge/Kubernetes-Kind-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="Kubernetes Kind">
+  <img src="https://img.shields.io/badge/AWS-S3-232F3E?style=for-the-badge&logo=amazonaws&logoColor=white" alt="AWS S3">
+  <img src="https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform">
+  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus">
+</p>
 
-A candidate configuration passes through:
+---
 
-1. Schema validation
-2. Semantic validation
-3. SHA-256 integrity calculation
-4. Optional Ed25519 signature verification
-5. Controlled staged promotion
-6. Configuration activation verification
-7. Health/readiness checks
-8. Bake periods
-9. Automatic halt on failure
-10. Cross-cell rollback to the previous known-good configuration
+## 🎯 The Problem
 
-The rollout stages are simulated locally as:
+A configuration can be **syntactically valid and still be operationally dangerous**.
+
+A traditional deployment flow may look like:
 
 ```text
-INTERNAL → 1% → 10% → 100%
+Configuration Change
+        ↓
+Deploy Everywhere
+        ↓
+Discover Failure
+        ↓
+Recover Under Pressure
 ```
 
-These percentages represent **logical rollout stages in the local simulation**, not real traffic percentages.
-
----
-
-## Architecture
+Blast-Radius Guard changes the release model:
 
 ```text
-                    Candidate Configuration
-                             |
-                             v
-                    +------------------+
-                    |  Rollout Guard   |
-                    | Python Controller |
-                    +--------+---------+
-                             |
-                             v
-                 Schema + Semantic Validation
-                             |
-                             v
-                       SHA-256 Hash
-                             |
-                    +--------+---------+
-                    |                  |
-             Signature Required?       |
-                    |                  |
-                   YES                 NO
-                    |                  |
-                    v                  |
-             Ed25519 Verify            |
-                    |                  |
-                    +--------+---------+
-                             |
-                             v
-                    S3 Versioned Store
-                             |
-                             v
-                    Promotion Controller
-                             |
-          +------------------+------------------+
-          |                  |                  |
-          v                  v                  v
-   blast-cell-1       blast-cell-2       blast-cell-3
-          |                  |                  |
-          v                  v                  v
-    rules-consumer      rules-consumer      rules-consumer
-          |                  |                  |
-          +------------------+------------------+
-                             |
-                     Health / Ready / SHA
-                             |
-                    +--------+--------+
-                    |                 |
-                 HEALTHY           FAILURE
-                    |                 |
-                    v                 v
-              Next Stage            HALTED
-                                        |
-                                        v
-                                  ROLLING_BACK
-                                        |
-                                        v
-                              Known-Good Config
+Validate
+   ↓
+Verify Integrity
+   ↓
+Verify Signature
+   ↓
+Promote Small
+   ↓
+Observe + Bake
+   ↓
+Promote Further
+   ↓
+Healthy → Continue
+Failure → HALT → ROLLBACK
 ```
 
----
+### Design principle
 
-## Key Capabilities
-
-### Configuration safety
-
-* JSON Schema validation
-* Semantic validation
-* Duplicate rule detection
-* Invalid action detection
-* Dangerous rule-name validation
-* Priority validation
-* Maximum configuration size enforcement
-* SHA-256 candidate integrity verification
-
-### Progressive delivery
-
-* `INTERNAL`
-* `1%`
-* `10%`
-* `100%`
-* Configurable bake periods
-* Health/readiness verification before promotion
-
-### Failure protection
-
-* Deterministic runtime failure injection for testing
-* Automatic `HALTED` transition
-* Automatic `ROLLING_BACK`
-* Cross-cell rollback
-* Previous configuration preservation
-* Consumer-level last-known-good protection
-* Rollout state persistence
-
-### Cryptographic verification
-
-* Ed25519 configuration signing
-* Detached `.sig` files
-* Public-key verification
-* Configurable signature enforcement for production deployments
-* Private signing key excluded from Git
-* Tampered configuration rejection
-
-### AWS infrastructure
-
-* S3 configuration bucket
-* S3 versioning
-* Server-side encryption
-* Public-access blocking
-* Object ownership controls
-* Lifecycle configuration
-* Least-privilege IAM policy
-* Terraform-managed infrastructure
+> **Reduce blast radius before increasing exposure.**
 
 ---
 
-## Technology Stack
+## 🏗️ Architecture
 
-| Component              | Technology               |
-| ---------------------- | ------------------------ |
-| Language               | Python 3.11+             |
-| Container runtime      | Docker                   |
-| Kubernetes             | Kind                     |
-| Kubernetes CLI         | kubectl                  |
-| Configuration          | YAML                     |
-| Schema validation      | JSON Schema              |
-| Metrics                | Prometheus client        |
-| Object storage         | Amazon S3                |
-| Infrastructure as Code | Terraform                |
-| Cryptography           | Ed25519 / `cryptography` |
-| CI/CD                  | GitHub Actions           |
-| Version control        | Git + GitHub             |
+```mermaid
+flowchart LR
+    A[Candidate Config] --> B[Validation]
+    B --> B1[Schema]
+    B --> B2[Semantic]
+    B --> B3[SHA-256]
+    B --> B4[Ed25519]
+    B1 --> C[Versioned S3]
+    B2 --> C
+    B3 --> C
+    B4 --> C
+    C --> D[Rollout Controller]
 
----
+    D --> E[INTERNAL]
+    E --> F[1%]
+    F --> G[10%]
+    G --> H[100%]
 
-# Configuration Consumer
+    E --> I[Health Gate]
+    F --> I
+    G --> I
+    H --> I
 
-Each Kubernetes cell runs a lightweight Python configuration consumer.
+    I -->|Healthy| J[Next Stage]
+    I -->|Failure| K[HALTED]
+    K --> L[ROLLING_BACK]
+    L --> M[Known-Good Config]
 
-The consumer:
+    D --> N[(Prometheus)]
+```
 
-* Loads `rules.yaml` from a Kubernetes ConfigMap
-* Validates configuration structure
-* Performs semantic validation
-* Maintains last-known-good configuration
-* Detects configuration changes using SHA-256
-* Exposes health and readiness endpoints
-* Exposes Prometheus-compatible metrics
-
-### Endpoints
+### Kubernetes cell model
 
 ```text
-/health
-/ready
-/metrics
+                    Rollout Controller
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+       blast-cell-1  blast-cell-2  blast-cell-3
+             │             │             │
+             ▼             ▼             ▼
+        rules-consumer rules-consumer rules-consumer
 ```
+
+The rollout percentages are **logical stages in the local simulation**, not actual load-balancer traffic percentages.
 
 ---
 
-# Rollout Controller
-
-The controller is implemented in:
-
-```text
-controller/rollout_guard.py
-```
-
-Run it from the repository root:
-
-```bash
-controller/.venv/bin/python -m controller.rollout_guard config/candidate-v1.4.yaml
-```
-
-The controller manages the rollout state machine:
+## 🚦 Rollout Flow
 
 ```text
 PENDING
-   |
-   v
+   │
+   ▼
 VALIDATING
-   |
-   v
+   │
+   ├── Schema
+   ├── Semantic rules
+   ├── Size limit
+   ├── SHA-256
+   └── Ed25519 signature
+   │
+   ▼
 PROMOTING
-   |
-   v
+   │
+   ▼
 BAKING
-   |
-   v
-HEALTHY
-   |
-   v
-COMPLETED
+   │
+   ├── Readiness
+   ├── Health
+   ├── Active configuration
+   └── Prometheus signals
+   │
+   ├───────────────┐
+   ▼               ▼
+HEALTHY          HALTED
+   │               │
+   ▼               ▼
+NEXT STAGE     ROLLING_BACK
+                   │
+                   ▼
+             KNOWN-GOOD CONFIG
 ```
 
-Failure path:
-
-```text
-HALTED
-   |
-   v
-ROLLING_BACK
-   |
-   v
-Previous Known-Good Configuration
-```
+A failed stage does **not** continue to later cells.
 
 ---
 
-# Configuration Validation
+## 🛡️ Safety Controls
 
-Every candidate is validated before promotion.
-
-## Schema validation
-
-The consumer schema verifies the expected YAML structure and data types.
-
-## Semantic validation
-
-Semantic validation rejects unsafe configuration values such as:
-
-* Invalid actions
-* Duplicate rule names
-* Dangerous rule names
-* Invalid priorities
-* Other invalid rule combinations
-
-## Maximum configuration size
-
-The controller enforces a configurable maximum candidate size.
-
-Default:
-
-```text
-1 MiB
-```
-
-Override with:
-
-```bash
-MAX_CONFIG_SIZE=2097152 \
-controller/.venv/bin/python -m controller.rollout_guard config/candidate.yaml
-```
+| Control | Purpose |
+|---|---|
+| JSON Schema | Reject malformed configuration structure |
+| Semantic validation | Reject unsafe values and rule combinations |
+| Duplicate detection | Prevent conflicting duplicate rules |
+| Dangerous-name checks | Reject unsafe rule names |
+| Priority validation | Enforce valid rule priority |
+| 1 MiB size guard | Prevent oversized candidates |
+| SHA-256 | Verify exact candidate bytes |
+| Ed25519 | Cryptographically authenticate candidates |
+| Health gates | Prevent unhealthy promotion |
+| Bake periods | Observe before increasing exposure |
+| Last-known-good | Preserve a working configuration |
+| Cross-cell rollback | Restore previously promoted cells |
+| Durable state | Recover rollout state after controller restart |
 
 ---
 
-# SHA-256 Integrity
+## 🔐 Configuration Security
 
-The controller calculates a SHA-256 hash of the exact candidate bytes:
+### Ed25519 signing
 
-```text
-[VALIDATE] Candidate SHA-256: <hash>
-```
-
-When the configuration is uploaded to S3, the stored object's SHA-256 is compared against the candidate hash.
-
-A mismatch causes validation to fail.
-
-This protects against the candidate changing between local validation and storage.
-
----
-
-# Ed25519 Configuration Signing
-
-Blast-Radius Guard supports cryptographic signing of configuration candidates.
-
-The signing implementation is:
+The controller can require a detached Ed25519 signature for every candidate.
 
 ```text
-controller/signing.py
+candidate.yaml
+      +
+candidate.yaml.sig
+      ↓
+Public-key verification
+      ↓
+Accepted / Rejected
 ```
 
-It uses Ed25519 keys through the Python `cryptography` library.
+Private signing keys are **never committed to Git**.
 
-## Key locations
-
-Public verification key:
-
-```text
-security/public/ed25519-public.pem
-```
-
-Private signing key:
-
-```text
-security/keys/ed25519-private.pem
-```
-
-The private key directory is explicitly ignored by Git:
-
-```text
-security/keys/
-```
-
-The private key must never be committed to the repository.
-
-## Signature format
-
-A candidate can have a detached signature:
-
-```text
-config/candidate-v1.4.yaml
-config/candidate-v1.4.yaml.sig
-```
-
-The controller verifies the signature against the exact candidate bytes.
-
----
-
-## Enforcing signatures
-
-By default, signature enforcement is disabled.
-
-Enable it with:
+Signature enforcement:
 
 ```bash
 REQUIRE_SIGNATURE=true \
@@ -351,104 +196,31 @@ controller/.venv/bin/python -m controller.rollout_guard \
 config/candidate-v1.4.yaml
 ```
 
-The public key defaults to:
+A candidate modified after signing fails verification before promotion.
 
-```text
-security/public/ed25519-public.pem
-```
+### SHA-256 integrity
 
-It can be overridden with:
+The controller hashes the **exact candidate bytes** and compares the stored artifact against that expected digest.
 
-```bash
-PUBLIC_KEY_PATH=/path/to/public-key.pem \
-REQUIRE_SIGNATURE=true \
-controller/.venv/bin/python -m controller.rollout_guard \
-config/candidate-v1.4.yaml
-```
-
-When signature verification succeeds:
-
-```text
-[SIGNATURE] Ed25519 verification passed
-```
-
-If the candidate has been modified after signing:
-
-```text
-Candidate signature is invalid
-```
-
-The rollout is halted before promotion.
+This protects the boundary between validation and artifact storage.
 
 ---
 
-# S3 Configuration Storage
+## ☁️ AWS / Terraform
 
-Terraform provisions the S3 configuration storage used by the controller.
+The project integrates versioned S3 storage for validated configuration artifacts.
 
-The bucket uses:
+Terraform provisions:
 
-* S3 versioning
-* Server-side encryption
-* Public-access blocking
-* Ownership controls
-* Lifecycle configuration
+- S3 bucket
+- Versioning
+- Server-side encryption
+- Public-access blocking
+- Object ownership controls
+- Lifecycle configuration
+- Least-privilege IAM policy
 
-The controller stores validated configurations using versioned S3 objects.
-
-The current Terraform resources are under:
-
-```text
-terraform/
-```
-
-Initialize Terraform:
-
-```bash
-cd terraform
-terraform init
-```
-
-Review the infrastructure:
-
-```bash
-terraform plan
-```
-
-Apply:
-
-```bash
-terraform apply
-```
-
-View outputs:
-
-```bash
-terraform output
-```
-
-Expected outputs include:
-
-```text
-bucket_name
-bucket_arn
-bucket_region
-controller_s3_policy_arn
-```
-
----
-
-# Least-Privilege IAM
-
-Terraform creates the controller S3 policy:
-
-```text
-blast-radius-guard-controller-s3
-```
-
-The policy is restricted to the configuration object path and permits only the required S3 operations.
-
-The policy includes:
+The controller requires only the S3 operations it needs, including:
 
 ```text
 s3:GetObject
@@ -456,122 +228,19 @@ s3:PutObject
 s3:ListBucket
 ```
 
-The ListBucket permission is restricted to:
-
-```text
-blast-radius-guard/configs/*
-```
-
-Terraform state and variable files are excluded from Git.
+Terraform state and sensitive variable files are excluded from Git.
 
 ---
 
-# Kubernetes Environment
+## 📈 Observability
 
-Create the Kind cluster:
-
-```bash
-kind create cluster --name devops
-```
-
-Create the three isolated namespaces:
-
-```bash
-kubectl create namespace blast-cell-1
-kubectl create namespace blast-cell-2
-kubectl create namespace blast-cell-3
-```
-
-Build the consumer:
-
-```bash
-docker build -t blast-consumer:dev ./consumer
-```
-
-Load it into Kind:
-
-```bash
-kind load docker-image blast-consumer:dev --name devops
-```
-
-Deploy the cells:
-
-```bash
-kubectl apply -f deploy/cells/
-```
-
-Verify:
-
-```bash
-kubectl get pods -A
-```
-
----
-
-# Rollout Stages
-
-The local simulation models progressive rollout as:
-
-```text
-INTERNAL
-   |
-   v
-1%
-   |
-   v
-10%
-   |
-   v
-100%
-```
-
-At each stage the controller:
-
-1. Applies the candidate.
-2. Waits for activation.
-3. Checks readiness.
-4. Checks health.
-5. Verifies configuration state.
-6. Executes the configured bake period.
-7. Promotes only after the stage is healthy.
-
-The percentages are **simulation stages**, not actual weighted Kubernetes or load-balancer traffic.
-
----
-
-# Bake Periods
-
-Bake durations are configurable through environment variables.
-
-Defaults:
-
-```text
-BAKE_INTERNAL=30
-BAKE_1_PERCENT=60
-BAKE_10_PERCENT=60
-```
-
-Example:
-
-```bash
-BAKE_INTERNAL=10 \
-BAKE_1_PERCENT=20 \
-BAKE_10_PERCENT=20 \
-controller/.venv/bin/python -m controller.rollout_guard \
-config/candidate-v1.4.yaml
-```
-
----
-
-# Prometheus Metrics
-
-The consumer exposes:
+The consumer exposes Prometheus-compatible metrics through:
 
 ```text
 /metrics
 ```
 
-Important metrics include:
+### Consumer metrics
 
 ```text
 rules_config_loaded
@@ -581,7 +250,7 @@ rules_config_reload_failure_total
 rules_config_last_reload_timestamp
 ```
 
-The controller also exposes rollout metrics:
+### Controller metrics
 
 ```text
 blast_radius_rollouts_total
@@ -592,172 +261,121 @@ blast_radius_signature_failures_total
 blast_radius_rollout_duration_seconds
 ```
 
-Prometheus is configured to scrape the three consumer cells.
-
-For the local Kind demonstration, start the Prometheus port-forward:
-
-```bash
-kubectl port-forward -n monitoring svc/prometheus 9090:9090
-```
-
-The controller endpoint is configurable with `PROMETHEUS_URL`. For an in-cluster deployment, point it at the Prometheus Kubernetes Service instead of localhost.
+Prometheus is configured to scrape all three simulated Kubernetes cells.
 
 ---
 
-# Failure Injection
+## 💥 Failure Handling
 
-The controller includes deterministic runtime failure injection for testing the safety path.
-
-Enable it with:
+The project includes **deterministic runtime failure injection** so the safety path can be tested repeatedly.
 
 ```bash
 INJECT_RUNTIME_FAILURE=true \
+BAKE_INTERNAL=5 \
+BAKE_1_PERCENT=5 \
+BAKE_10_PERCENT=5 \
 controller/.venv/bin/python -m controller.rollout_guard \
-config/candidate-v1.4.yaml
+config/candidate-v1.5-runtime-test.yaml
 ```
 
-A failure should result in:
-
-```text
-HALTED
-   |
-   v
-ROLLING_BACK
-```
-
-The controller restores configurations previously saved for the affected cells.
-
-This mechanism exists specifically to make the rollback path reproducible during testing.
-
----
-
-# Rollback
-
-Before modifying a cell, the controller records its existing configuration.
-
-If a later stage fails:
+Expected safety behavior:
 
 ```text
 Candidate
-   |
-   v
+   ↓
+Promotion
+   ↓
+Bake
+   ↓
+Failure detected
+   ↓
 HALTED
-   |
-   v
+   ↓
 ROLLING_BACK
-   |
-   v
-Previous Configuration
+   ↓
+Previous known-good configuration
+   ↓
+Integrity verified
 ```
 
-Rollback occurs in reverse promotion order.
-
-The consumer also maintains last-known-good configuration protection.
-
-The combination prevents a failed rollout from continuing to later cells.
+The rollback path is deliberately reproducible rather than relying on an accidental failure.
 
 ---
 
-# Configuration Example
+## 🧪 Verification
 
-Example candidate:
+The latest verified regression run:
 
-```yaml
-version: "1.4"
-
-rules:
-  - name: block_bad_ip_v2
-    action: deny
-    priority: 150
-
-  - name: allow_internal
-    action: allow
-    priority: 10
+```text
+28 passed
 ```
 
-The candidate must pass schema and semantic validation before promotion.
-
----
-
-# Testing
-
-The project contains tests for cryptographic signing as well as the existing consumer/controller functionality.
-
-Run the complete test suite:
+Run the complete suite:
 
 ```bash
 controller/.venv/bin/pytest -q
 ```
 
-Latest verified regression result:
+The automated tests cover:
+
+- Configuration validation
+- Consumer behavior
+- Controller behavior
+- Ed25519 signing
+- Signature enforcement
+- S3 storage
+- Durable state recovery
+- Prometheus observability
+- Consumer contract behavior
+- Configuration-size protection
+- CI failure handling
+- Kubernetes deployment readiness
+
+### CI pipeline
+
+Every CI run performs:
 
 ```text
-28 passed in 15.70s
-```
-
-The suite covers validation, controller behavior, signing, S3 storage, durable state recovery, observability, consumer contracts, configuration-size protection, CI failure handling, and deployment-readiness behavior.
-
-Run signing tests specifically:
-
-```bash
-controller/.venv/bin/pytest -q tests/test_signing.py
-```
-
-Expected:
-
-```text
-4 passed
-```
-
-The signing tests verify:
-
-1. Valid Ed25519 signatures are accepted.
-2. Tampered configuration content fails verification.
-3. A signature cannot be verified with the wrong public key.
-4. Malformed signature data is rejected.
-
-Controller-level tests additionally verify:
-
-1. Unsigned candidates are rejected when `REQUIRE_SIGNATURE=true`.
-2. Invalid signatures are rejected when `REQUIRE_SIGNATURE=true`.
-
----
-
-# Security Checks
-
-Before committing changes, verify sensitive files are ignored:
-
-```bash
-git check-ignore -v \
-  security/keys/ed25519-private.pem \
-  terraform/terraform.tfstate \
-  terraform/terraform.tfstate.backup \
-  terraform/terraform.tfvars
-```
-
-Verify they are not tracked:
-
-```bash
-git ls-files | grep -E \
-'ed25519-private|terraform.tfstate|terraform.tfvars' \
-|| echo "SECURITY CHECK: clean"
-```
-
-The repository should never contain:
-
-```text
-security/keys/ed25519-private.pem
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/*.tfvars
+Checkout
+   ↓
+Python 3.11
+   ↓
+Install dependencies
+   ↓
+Compile Python files
+   ↓
+Run pytest
+   ↓
+Build Docker image
 ```
 
 ---
 
-# Project Structure
+## 🧰 Technology Stack
+
+| Layer | Technology |
+|---|---|
+| Language | Python 3.11+ |
+| Containers | Docker |
+| Kubernetes | Kind + kubectl |
+| Configuration | YAML |
+| Validation | JSON Schema + semantic validation |
+| Cryptography | Ed25519 / cryptography |
+| Integrity | SHA-256 |
+| Cloud storage | Amazon S3 |
+| Infrastructure as Code | Terraform |
+| Observability | Prometheus |
+| CI/CD | GitHub Actions |
+| OS / Automation | Linux + Bash |
+| Version control | Git + GitHub |
+
+---
+
+## 📁 Project Structure
 
 ```text
 blast-radius-guard/
+│
 ├── config/
 │   ├── candidate-*.yaml
 │   └── *.sig
@@ -776,8 +394,6 @@ blast-radius-guard/
 ├── deploy/
 │   └── cells/
 │
-├── k8s/
-│
 ├── security/
 │   └── public/
 │       └── ed25519-public.pem
@@ -787,8 +403,7 @@ blast-radius-guard/
 │   ├── iam.tf
 │   ├── variables.tf
 │   ├── outputs.tf
-│   ├── versions.tf
-│   └── .terraform.lock.hcl
+│   └── versions.tf
 │
 ├── tests/
 │   ├── test_signing.py
@@ -803,67 +418,43 @@ blast-radius-guard/
 └── README.md
 ```
 
-The private signing key is intentionally absent from the repository:
-
-```text
-security/keys/ed25519-private.pem
-```
-
 ---
 
-# Prerequisites
+## 🚀 Quick Start
 
-Recommended environment:
-
-* Linux or WSL2
-* Python 3.11+
-* Docker
-* kubectl
-* Kind
-* Terraform
-* Git
-
-Verify:
+### 1. Create the local Kubernetes cluster
 
 ```bash
-python3 --version
-docker --version
-kubectl version --client
-kind version
-terraform version
-git --version
+kind create cluster --name devops
 ```
 
----
-
-# Local Python Environment
-
-Create the controller virtual environment:
+### 2. Create the three rollout cells
 
 ```bash
-python3 -m venv controller/.venv
+kubectl create namespace blast-cell-1
+kubectl create namespace blast-cell-2
+kubectl create namespace blast-cell-3
 ```
 
-Install dependencies:
+### 3. Build the consumer image
 
 ```bash
-controller/.venv/bin/pip install -r controller/requirements.txt
+docker build -t blast-consumer:dev ./consumer
 ```
 
-The controller dependencies include:
+### 4. Load it into Kind
 
-```text
-boto3
-Flask
-PyYAML
-jsonschema
-prometheus-client
-cryptography
+```bash
+kind load docker-image blast-consumer:dev --name devops
 ```
 
----
+### 5. Deploy the cells
 
-# Basic Rollout
+```bash
+kubectl apply -f deploy/cells/
+```
+
+### 6. Run the controller
 
 From the repository root:
 
@@ -880,105 +471,80 @@ controller/.venv/bin/python -m controller.rollout_guard \
 config/candidate-v1.4.yaml
 ```
 
-A successful validation includes output similar to:
-
-```text
-[VALIDATE] Candidate passed schema and semantic validation
-[VALIDATE] Config version: 1.4
-[VALIDATE] Candidate SHA-256: <hash>
-[SIGNATURE] Ed25519 verification passed
-```
-
-The controller then proceeds into staged promotion.
-
 ---
 
-# Controller State Machine
+## 🔍 Useful Verification Commands
 
-```text
-                    +-------------+
-                    |   PENDING   |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    | VALIDATING  |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    | PROMOTING   |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    |   BAKING    |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    |   HEALTHY   |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    |  COMPLETED  |
-                    +-------------+
+Check the Kubernetes cells:
 
-Failure from validation or promotion
-                           |
-                           v
-                    +-------------+
-                    |   HALTED    |
-                    +------+------+
-                           |
-                           v
-                    +-------------+
-                    |ROLLING_BACK |
-                    +------+------+
-                           |
-                           v
-                 Previous Known-Good
-                    Configuration
+```bash
+kubectl get pods -A
+```
+
+Check consumer health:
+
+```bash
+kubectl get pods -n blast-cell-1
+kubectl get pods -n blast-cell-2
+kubectl get pods -n blast-cell-3
+```
+
+Start the local Prometheus endpoint:
+
+```bash
+kubectl port-forward -n monitoring svc/prometheus 9090:9090
 ```
 
 ---
 
-# Repository Status
+## ⚠️ Scope & Engineering Note
 
-The implementation currently includes:
+This repository is intentionally a **production-style local simulation**.
 
-* Kubernetes configuration consumer
-* JSON Schema and semantic validation
-* duplicate and dangerous-rule detection
-* configuration-size protection
-* SHA-256 integrity verification
-* last-known-good configuration handling
-* staged rollout controller
-* logical INTERNAL → 1% → 10% → 100% promotion
-* configurable bake periods
-* health and readiness gates
-* Kubernetes deployment readiness checks
-* deterministic runtime failure testing
-* automatic HALTED → ROLLING_BACK behavior
-* cross-cell rollback
-* rollback SHA-256 integrity verification
-* S3-backed versioned configuration artifacts
-* Ed25519 signing and verification
-* production-mode signature enforcement
-* durable rollout state persistence
-* controller restart recovery
-* Prometheus-compatible controller and consumer metrics
-* Terraform AWS infrastructure
-* least-privilege S3 IAM policy
-* GitHub Actions CI validation
-* 28 automated tests
+The Kind environment demonstrates the rollout, validation, security, observability, failure, and recovery mechanisms without claiming that the local cluster itself is a production deployment.
 
-The repository is intended as a **production-style DevOps/SRE engineering project and local simulation**, not as a claim that the local Kind environment itself represents a production deployment.
+The `INTERNAL → 1% → 10% → 100%` percentages are logical rollout stages in the simulation.
 
 ---
 
-## License
+## 💡 What This Project Demonstrates
+
+This project is designed to demonstrate practical DevOps/SRE engineering around:
+
+**Safe delivery**
+→ progressive rollout  
+→ health gates  
+→ automatic rollback
+
+**Security**
+→ cryptographic signatures  
+→ integrity verification  
+→ least-privilege IAM
+
+**Reliability**
+→ known-good recovery  
+→ durable state  
+→ cross-cell rollback
+
+**Operations**
+→ Kubernetes  
+→ Prometheus  
+→ CI/CD  
+→ Terraform  
+→ AWS
+
+---
+
+## 👨‍💻 Author
+
+**Gaurav Ghodage**
+
+DevOps Engineer · SRE · Kubernetes · AWS
+
+[GitHub Profile](https://github.com/gauravghodevs)
+
+---
+
+## 📜 License
 
 This project is provided for engineering, learning, and demonstration purposes.
-
