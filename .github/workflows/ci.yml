@@ -1,40 +1,44 @@
-name: Blast Radius Guard CI
+name: Pure Bash DevSecOps & SRE CI
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ "main", "aws-extension" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
-  test:
+  bash-validation-and-build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install dependencies
+      - name: Install yq and jq
         run: |
-          python -m pip install --upgrade pip
-          pip install -r consumer/requirements.txt
-          pip install -r controller/requirements.txt
-          pip install pytest
+          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          sudo chmod +x /usr/local/bin/yq
+          jq --version && yq --version
 
-      - name: Compile Python files
+      - name: Lint all Bash scripts
         run: |
-          python -m compileall -q consumer controller tests
+          bash -n scripts/validate_config.sh
+          bash -n scripts/rollout_guard.sh
+          bash -n lambda/bootstrap
+          bash -n consumer/server.sh
 
-      - name: Run test suite
+      - name: Run Config Validation & Ed25519 Signature Suite
         run: |
-          python -m pytest -q
+          ./scripts/validate_config.sh config/candidate-valid.yaml
+          ./scripts/validate_config.sh config/candidate-v1.3.yaml
+          ./scripts/validate_config.sh config/candidate-v1.4.yaml config/candidate-v1.4.yaml.sig security/public/ed25519-public.pem
+          ! ./scripts/validate_config.sh config/candidate-broken.yaml
+          ! ./scripts/validate_config.sh config/candidate-oversized.yaml
 
-      - name: Build Docker image
+      - name: Build and Smoke-Test Pure Bash Consumer Container
         run: |
-          docker build -t blast-consumer:ci ./consumer
+          docker build -t k8s-config-consumer:ci -f consumer/Dockerfile consumer/
+          docker run -d --rm --name consumer-ci -p 8000:8000 k8s-config-consumer:ci
+          sleep 2
+          curl -f -sS http://localhost:8000/healthz | jq -e '.sli_healthy == true'
+          curl -f -sS http://localhost:8000/metrics | grep -q "slo_target_ratio"
+          docker stop consumer-ci

@@ -16,35 +16,30 @@ spec:
     spec:
       containers:
         - name: rules-consumer
-          image: blast-consumer:dev
+          image: blast-radius-consumer:test
           imagePullPolicy: IfNotPresent
           ports:
-            - containerPort: 8080
+            - containerPort: 8000
           env:
             - name: CONFIG_PATH
               value: /config/rules.yaml
-            - name: DATA_DIR
-              value: /var/lib/rules
-            - name: ENABLE_FAULT_INJECTION
+            - name: CELL_NAME
+              value: blast-cell-2
+            - name: INJECT_RUNTIME_FAILURE
               value: "false"
           readinessProbe:
             httpGet:
               path: /ready
-              port: 8080
+              port: 8000
             initialDelaySeconds: 3
-            periodSeconds: 2
+            periodSeconds: 5
             timeoutSeconds: 2
-            failureThreshold: 1
-            successThreshold: 1
+            failureThreshold: 2
           volumeMounts:
             - name: config
               mountPath: /config
               readOnly: true
-            - name: rules-data
-              mountPath: /var/lib/rules
       volumes:
         - name: config
           configMap:
-            name: rules-config
-        - name: rules-data
-          emptyDir: {}
+            name: blast-cell-2-config

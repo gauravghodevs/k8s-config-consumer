@@ -17,3 +17,17 @@ security/keys/
 *.tfstate.*
 *.tfvars
 
+
+# Generated Lambda deployment package
+/config-validator-lambda.zip
+
+# Terraform state backups
+terraform/*state-backup*.json
+
+# Local backups
+*.bak
+
+# Terraform local state and working directory
+.terraform/
+*.tfstate
+*.tfstate.*

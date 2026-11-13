@@ -1,16 +1,16 @@
-FROM python:3.12-slim
+FROM alpine:3.20
+
+RUN apk add --no-cache bash socat jq yq curl ca-certificates && \
+    adduser -D -u 10001 appuser
 
 WORKDIR /app
+COPY rules.yaml /app/rules.yaml
+COPY schema/rules.schema.json /app/schema/rules.schema.json
+COPY server.sh /app/server.sh
 
-COPY requirements.txt .
+RUN chown -R 10001:10001 /app && chmod +x /app/server.sh
 
-RUN pip install --no-cache-dir -r requirements.txt
+USER 10001
+EXPOSE 8000
 
-COPY app ./app
-COPY schema ./schema
-
-RUN mkdir -p /var/lib/rules
-
-EXPOSE 8080
-
-CMD ["python", "app/main.py"]
+ENTRYPOINT ["/app/server.sh"]

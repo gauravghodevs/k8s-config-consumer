@@ -12,14 +12,14 @@ data:
       - job_name: rules-consumer-cell-1
         static_configs:
           - targets:
-              - rules-consumer.blast-cell-1.svc.cluster.local:8080
+              - rules-consumer.blast-cell-1.svc.cluster.local:8000
 
       - job_name: rules-consumer-cell-2
         static_configs:
           - targets:
-              - rules-consumer.blast-cell-2.svc.cluster.local:8080
+              - rules-consumer.blast-cell-2.svc.cluster.local:8000
 
       - job_name: rules-consumer-cell-3
         static_configs:
           - targets:
-              - rules-consumer.blast-cell-3.svc.cluster.local:8080
+              - rules-consumer.blast-cell-3.svc.cluster.local:8000

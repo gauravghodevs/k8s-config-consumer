@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+RUNTIME_API="http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime"
+MAX_BYTES=1048576
+
+while true; do
+  HEADERS=$(mktemp)
+  EVENT_DATA=$(curl -sS -LD "$HEADERS" "${RUNTIME_API}/invocation/next")
+  REQUEST_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" | tr -d '[:space:]' | cut -d: -f2)
+  rm -f "$HEADERS"
+
+  # Extract config content from API Gateway body or EventBridge metadata
+  BODY=$(echo "$EVENT_DATA" | jq -r '.body // empty')
+  if [[ -z "$BODY" ]]; then
+    S3_KEY=$(echo "$EVENT_DATA" | jq -r '.detail.object.key // "event-ping"')
+    S3_SIZE=$(echo "$EVENT_DATA" | jq -r '.detail.object.size // 0')
+    if (( S3_SIZE > MAX_BYTES )); then
+      RESP='{"statusCode":400,"body":"{\"valid\":false,\"reason\":\"Oversized S3 object\"}"}'
+    else
+      RESP=$(jq -n --arg key "$S3_KEY" '{"statusCode":200,"body":("{\"valid\":true,\"s3_key\":\"" + $key + "\"}")}')
+    fi
+  else
+    BYTE_LEN=$(printf "%s" "$BODY" | wc -c | tr -d ' ')
+    SHA256=$(printf "%s" "$BODY" | sha256sum | awk '{print $1}')
+    if (( BYTE_LEN == 0 || BYTE_LEN > MAX_BYTES )); then
+      RESP='{"statusCode":400,"body":"{\"valid\":false,\"reason\":\"Size limit exceeded\"}"}'
+    elif printf "%s" "$BODY" | grep -Eq "version:" && printf "%s" "$BODY" | grep -Eq "rules:"; then
+      RESP=$(jq -n --arg sha "$SHA256" --argjson sz "$BYTE_LEN" \
+        '{"statusCode":200,"body":("{\"valid\":true,\"sha256\":\"" + $sha + "\",\"bytes\":" + ($sz|tostring) + "}")}')
+    else
+      RESP='{"statusCode":422,"body":"{\"valid\":false,\"reason\":\"Missing required version or rules keys\"}"}'
+    fi
+  fi
+
+  curl -sS -X POST "${RUNTIME_API}/invocation/${REQUEST_ID}/response" -d "$RESP" >/dev/null
+done

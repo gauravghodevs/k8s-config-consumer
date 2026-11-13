@@ -1,0 +1,100 @@
+version: 0.2
+
+phases:
+  install:
+    commands:
+      - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/download/v4.44.3/yq_linux_amd64
+      - chmod +x /usr/local/bin/yq
+      - command -v bash
+      - command -v jq
+      - command -v openssl
+      - command -v zip
+      - yq --version
+
+  pre_build:
+    commands:
+      - bash -n scripts/validate_config.sh
+      - python3 -m py_compile lambda/lambda_function.py
+      - test -n "$ECR_REPO_URI"
+      - test -n "$AWS_DEFAULT_REGION"
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REPO_URI"
+
+  build:
+    commands:
+      - |
+        set -u
+
+        TESTS=0
+        FAILURES=0
+        TESTCASE_XML=$(mktemp)
+        trap 'rm -f "$TESTCASE_XML"' EXIT
+
+        run_valid() {
+          NAME="$1"
+          shift
+          TESTS=$((TESTS + 1))
+
+          if "$@" >/tmp/config-test.log 2>&1; then
+            echo "PASS: $NAME"
+            printf '<testcase classname="config" name="%s"/>\n' "$NAME" >> "$TESTCASE_XML"
+          else
+            echo "FAIL: $NAME"
+            cat /tmp/config-test.log
+            FAILURES=$((FAILURES + 1))
+            printf '<testcase classname="config" name="%s"><failure message="Validation failed"/></testcase>\n' "$NAME" >> "$TESTCASE_XML"
+          fi
+        }
+
+        run_reject() {
+          NAME="$1"
+          shift
+          TESTS=$((TESTS + 1))
+
+          if "$@" >/tmp/config-test.log 2>&1; then
+            echo "FAIL: $NAME (invalid configuration was accepted)"
+            FAILURES=$((FAILURES + 1))
+            printf '<testcase classname="config" name="%s"><failure message="Invalid configuration was accepted"/></testcase>\n' "$NAME" >> "$TESTCASE_XML"
+          else
+            echo "PASS: $NAME (rejected as expected)"
+            printf '<testcase classname="config" name="%s"/>\n' "$NAME" >> "$TESTCASE_XML"
+          fi
+        }
+
+        run_valid candidate_valid \
+          ./scripts/validate_config.sh config/candidate-valid.yaml
+
+        run_valid candidate_v1_4_ed25519_signature \
+          ./scripts/validate_config.sh config/candidate-v1.4.yaml config/candidate-v1.4.yaml.sig security/public/ed25519-public.pem
+
+        run_reject reject_broken_yaml \
+          ./scripts/validate_config.sh config/candidate-broken.yaml
+
+        run_reject reject_oversized_yaml \
+          ./scripts/validate_config.sh config/candidate-oversized.yaml
+
+        {
+          echo "<testsuite name=\"bash-validation-suite\" tests=\"$TESTS\" failures=\"$FAILURES\">"
+          cat "$TESTCASE_XML"
+          echo "</testsuite>"
+        } > junit-report.xml
+
+        echo "Test results: $TESTS tests, $FAILURES failures"
+
+        if [ "$FAILURES" -gt 0 ]; then
+          exit 1
+        fi
+
+      - docker build -t "$ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION" -f consumer/Dockerfile consumer/
+      - docker push "$ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION"
+      - mkdir -p .lambda-package && docker run --rm --entrypoint /bin/sh -v "$PWD:/src" -w /src public.ecr.aws/lambda/python:3.12 -c "pip install --no-cache-dir --target .lambda-package PyYAML" && cp lambda/lambda_function.py .lambda-package/ && (cd .lambda-package && zip -qr ../config-validator-lambda.zip .) && rm -rf .lambda-package
+
+artifacts:
+  files:
+    - config-validator-lambda.zip
+    - junit-report.xml
+
+reports:
+  bash-validation-reports:
+    files:
+      - junit-report.xml
+    file-format: JUNITXML
