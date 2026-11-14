@@ -2,4 +2,4 @@ bucket_arn = "arn:aws:s3:::blast-radius-guard-383071508649"
 bucket_name = "blast-radius-guard-383071508649"
 bucket_region = "ap-south-1"
 controller_s3_policy_arn = "arn:aws:iam::383071508649:policy/blast-radius-guard-controller-s3"
-validate_api_endpoint = tostring(null)
+validate_api_endpoint = "https://msv0v1i0z0.execute-api.ap-south-1.amazonaws.com/validate"

@@ -101,6 +101,11 @@ resource "aws_codedeploy_deployment_group" "validator_canary" {
   service_role_arn       = aws_iam_role.codedeploy_role.arn
   deployment_config_name = "CodeDeployDefault.LambdaCanary10Percent5Minutes"
 
+  deployment_style {
+    deployment_option = "WITH_TRAFFIC_CONTROL"
+    deployment_type   = "BLUE_GREEN"
+  }
+
   alarm_configuration {
     enabled = true
     alarms  = [aws_cloudwatch_metric_alarm.lambda_error_alarm.alarm_name]

@@ -40,8 +40,8 @@ resource "aws_iam_role_policy" "lambda_s3_read" {
 resource "aws_lambda_function" "config_validator" {
   function_name    = "blast-radius-config-validator"
   role             = aws_iam_role.lambda_exec.arn
-  handler          = "lambda_function.lambda_handler"
-  runtime          = "python3.12"
+  handler          = "bootstrap"
+  runtime          = "provided.al2023"
   filename         = "${path.module}/../config-validator-lambda.zip"
   source_code_hash = filebase64sha256("${path.module}/../config-validator-lambda.zip")
   timeout          = 15

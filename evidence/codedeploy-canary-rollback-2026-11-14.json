@@ -1,0 +1,51 @@
+{
+    "deploymentInfo": {
+        "applicationName": "blast-radius-validator-app",
+        "deploymentGroupName": "blast-radius-validator-canary-dg",
+        "deploymentConfigName": "CodeDeployDefault.LambdaCanary10Percent5Minutes",
+        "deploymentId": "d-50088PZNL",
+        "revision": {
+            "revisionType": "AppSpecContent",
+            "appSpecContent": {
+                "sha256": "bb853ef483279c8292e224726c46745a8fe8dcc29314d3dd0d4e34ab53a771be"
+            }
+        },
+        "status": "Stopped",
+        "errorInformation": {
+            "code": "ALARM_ACTIVE",
+            "message": "One or more alarms have been activated according to the Amazon CloudWatch metrics you selected, and the affected deployments have been stopped. Activated alarms: <blast-radius-lambda-errors>"
+        },
+        "createTime": "2026-11-14T14:00:32.104000+00:00",
+        "completeTime": "2026-11-14T14:00:52.761000+00:00",
+        "deploymentOverview": {
+            "Pending": 0,
+            "InProgress": 0,
+            "Succeeded": 0,
+            "Failed": 1,
+            "Skipped": 0,
+            "Ready": 0
+        },
+        "creator": "user",
+        "ignoreApplicationStopFailures": false,
+        "autoRollbackConfiguration": {
+            "enabled": true,
+            "events": [
+                "DEPLOYMENT_FAILURE",
+                "DEPLOYMENT_STOP_ON_ALARM"
+            ]
+        },
+        "updateOutdatedInstancesOnly": false,
+        "rollbackInfo": {
+            "rollbackDeploymentId": "d-3TDN3DZNL",
+            "rollbackMessage": "Deployment d-50088PZNL terminated. Automatic rollback is triggered with a DeploymentId d-3TDN3DZNL."
+        },
+        "deploymentStyle": {
+            "deploymentType": "BLUE_GREEN",
+            "deploymentOption": "WITH_TRAFFIC_CONTROL"
+        },
+        "instanceTerminationWaitTimeStarted": false,
+        "fileExistsBehavior": "DISALLOW",
+        "deploymentStatusMessages": [],
+        "computePlatform": "Lambda"
+    }
+}
