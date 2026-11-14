@@ -1,9 +1,2 @@
-version: 0.0
-Resources:
-  - myLambdaFunction:
-      Type: AWS::Lambda::Function
-      Properties:
-        Name: "blast-radius-config-validator"
-        Alias: "live"
-        CurrentVersion: "1"
-        TargetVersion: "2"
+# Generated dynamically by buildspec.yml during CodeBuild.
+# Do not hardcode Lambda CurrentVersion or TargetVersion here.

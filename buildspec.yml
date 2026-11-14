@@ -10,6 +10,7 @@ phases:
       - command -v openssl
       - command -v zip
       - yq --version
+      - aws --version
 
   pre_build:
     commands:
@@ -17,6 +18,8 @@ phases:
       - python3 -m py_compile lambda/lambda_function.py
       - test -n "$ECR_REPO_URI"
       - test -n "$AWS_DEFAULT_REGION"
+      - test -n "$LAMBDA_FUNCTION_NAME"
+      - test -n "$LAMBDA_ALIAS_NAME"
       - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$ECR_REPO_URI"
 
   build:
@@ -86,11 +89,75 @@ phases:
 
       - docker build -t "$ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION" -f consumer/Dockerfile consumer/
       - docker push "$ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION"
-      - mkdir -p .lambda-package && docker run --rm --entrypoint /bin/sh -v "$PWD:/src" -w /src public.ecr.aws/lambda/python:3.12 -c "pip install --no-cache-dir --target .lambda-package PyYAML" && cp lambda/lambda_function.py .lambda-package/ && (cd .lambda-package && zip -qr ../config-validator-lambda.zip .) && rm -rf .lambda-package
+
+      - |
+        set -euo pipefail
+
+        rm -rf .lambda-package
+        mkdir -p .lambda-package
+
+        docker run --rm \
+          --entrypoint /bin/sh \
+          -v "$PWD:/src" \
+          -w /src \
+          public.ecr.aws/lambda/python:3.12 \
+          -c "pip install --no-cache-dir --target .lambda-package PyYAML"
+
+        cp lambda/lambda_function.py .lambda-package/
+
+        (
+          cd .lambda-package
+          zip -qr ../config-validator-lambda.zip .
+        )
+
+        rm -rf .lambda-package
+
+        echo "Reading current Lambda alias version..."
+        CURRENT_VERSION=$(aws lambda get-alias \
+          --function-name "$LAMBDA_FUNCTION_NAME" \
+          --name "$LAMBDA_ALIAS_NAME" \
+          --query 'FunctionVersion' \
+          --output text)
+
+        echo "Current live version: $CURRENT_VERSION"
+
+        echo "Publishing new Lambda version..."
+        PUBLISH_RESULT=$(aws lambda update-function-code \
+          --function-name "$LAMBDA_FUNCTION_NAME" \
+          --zip-file fileb://config-validator-lambda.zip \
+          --publish)
+
+        TARGET_VERSION=$(echo "$PUBLISH_RESULT" | jq -r '.Version')
+
+        if [ -z "$TARGET_VERSION" ] || [ "$TARGET_VERSION" = "null" ]; then
+          echo "ERROR: Lambda version publication failed."
+          exit 1
+        fi
+
+        echo "Waiting for Lambda update to complete..."
+        aws lambda wait function-updated \
+          --function-name "$LAMBDA_FUNCTION_NAME"
+
+        echo "Generating CodeDeploy AppSpec..."
+        cat > appspec.yml <<APPSPEC
+        version: 0.0
+        Resources:
+          - myLambdaFunction:
+              Type: AWS::Lambda::Function
+              Properties:
+                Name: "$LAMBDA_FUNCTION_NAME"
+                Alias: "$LAMBDA_ALIAS_NAME"
+                CurrentVersion: "$CURRENT_VERSION"
+                TargetVersion: "$TARGET_VERSION"
+        APPSPEC
+
+        echo "Generated AppSpec:"
+        cat appspec.yml
 
 artifacts:
   files:
     - config-validator-lambda.zip
+    - appspec.yml
     - junit-report.xml
 
 reports:

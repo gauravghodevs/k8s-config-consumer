@@ -1,4 +1,3 @@
-# Save as terraform/aws_extension.tf
 resource "aws_s3_bucket_notification" "eb_notification" {
   bucket      = aws_s3_bucket.config.id
   eventbridge = true
@@ -6,6 +5,7 @@ resource "aws_s3_bucket_notification" "eb_notification" {
 
 resource "aws_iam_role" "lambda_exec" {
   name = "blast-radius-bash-lambda-role"
+
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -14,6 +14,7 @@ resource "aws_iam_role" "lambda_exec" {
       Principal = { Service = "lambda.amazonaws.com" }
     }]
   })
+
   tags = { Project = "blast-radius" }
 }
 
@@ -21,6 +22,7 @@ resource "aws_iam_role_policy_attachment" "lambda_basic" {
   role       = aws_iam_role.lambda_exec.name
   policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
 }
+
 resource "aws_iam_role_policy" "lambda_s3_read" {
   name = "blast-radius-lambda-s3-read"
   role = aws_iam_role.lambda_exec.id
@@ -34,6 +36,7 @@ resource "aws_iam_role_policy" "lambda_s3_read" {
     }]
   })
 }
+
 resource "aws_lambda_function" "config_validator" {
   function_name    = "blast-radius-config-validator"
   role             = aws_iam_role.lambda_exec.arn
@@ -44,18 +47,31 @@ resource "aws_lambda_function" "config_validator" {
   timeout          = 15
   memory_size      = 128
   publish          = true
-  tags             = { Project = "blast-radius" }
+
+  tags = { Project = "blast-radius" }
+
+  lifecycle {
+    ignore_changes = [
+      filename,
+      source_code_hash
+    ]
+  }
 }
 
 resource "aws_lambda_alias" "live" {
   name             = "live"
   function_name    = aws_lambda_function.config_validator.function_name
   function_version = aws_lambda_function.config_validator.version
+
+  lifecycle {
+    ignore_changes = [function_version]
+  }
 }
 
 resource "aws_cloudwatch_event_rule" "s3_config_upload" {
   name        = "blast-radius-s3-config-created"
-  description = "Trigger Bash validator on config upload"
+  description = "Trigger validator on config upload"
+
   event_pattern = jsonencode({
     source      = ["aws.s3"]
     detail-type = ["Object Created"]
@@ -119,4 +135,3 @@ resource "aws_lambda_permission" "allow_apigw" {
 output "validate_api_endpoint" {
   value = "${aws_apigatewayv2_api.validate_api.api_endpoint}/validate"
 }
-

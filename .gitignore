@@ -31,3 +31,11 @@ terraform/*state-backup*.json
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# AWS & Terraform local artifacts
+*.zip
+.terraform/
+*.tfstate
+*.tfstate.*
+*.log
+eks-no-nat.yaml
