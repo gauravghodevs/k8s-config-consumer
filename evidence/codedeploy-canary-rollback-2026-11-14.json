@@ -3,11 +3,17 @@
         "applicationName": "blast-radius-validator-app",
         "deploymentGroupName": "blast-radius-validator-canary-dg",
         "deploymentConfigName": "CodeDeployDefault.LambdaCanary10Percent5Minutes",
-        "deploymentId": "d-50088PZNL",
-        "revision": {
+        "deploymentId": "d-EZOGYQZNL",
+        "previousRevision": {
             "revisionType": "AppSpecContent",
             "appSpecContent": {
                 "sha256": "bb853ef483279c8292e224726c46745a8fe8dcc29314d3dd0d4e34ab53a771be"
+            }
+        },
+        "revision": {
+            "revisionType": "AppSpecContent",
+            "appSpecContent": {
+                "sha256": "abdeef0e85ab79af635aca092a01006e8493b9a79296ae4fba1753d314d57c1d"
             }
         },
         "status": "Stopped",
@@ -15,8 +21,8 @@
             "code": "ALARM_ACTIVE",
             "message": "One or more alarms have been activated according to the Amazon CloudWatch metrics you selected, and the affected deployments have been stopped. Activated alarms: <blast-radius-lambda-errors>"
         },
-        "createTime": "2026-11-14T14:00:32.104000+00:00",
-        "completeTime": "2026-11-14T14:00:52.761000+00:00",
+        "createTime": "2026-11-14T14:08:32.587000+00:00",
+        "completeTime": "2026-11-14T14:08:53.135000+00:00",
         "deploymentOverview": {
             "Pending": 0,
             "InProgress": 0,
@@ -30,14 +36,14 @@
         "autoRollbackConfiguration": {
             "enabled": true,
             "events": [
-                "DEPLOYMENT_FAILURE",
-                "DEPLOYMENT_STOP_ON_ALARM"
+                "DEPLOYMENT_STOP_ON_ALARM",
+                "DEPLOYMENT_FAILURE"
             ]
         },
         "updateOutdatedInstancesOnly": false,
         "rollbackInfo": {
-            "rollbackDeploymentId": "d-3TDN3DZNL",
-            "rollbackMessage": "Deployment d-50088PZNL terminated. Automatic rollback is triggered with a DeploymentId d-3TDN3DZNL."
+            "rollbackDeploymentId": "d-LFL5FHZNL",
+            "rollbackMessage": "Deployment d-EZOGYQZNL terminated. Automatic rollback is triggered with a DeploymentId d-LFL5FHZNL."
         },
         "deploymentStyle": {
             "deploymentType": "BLUE_GREEN",
