@@ -2,32 +2,39 @@ version: 0.2
 phases:
   install:
     commands:
-      - wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+      - YQ_VERSION="v4.44.3"
+      - YQ_SHA256="a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7"
+      - wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+      - echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
       - chmod +x /usr/local/bin/yq
   pre_build:
     commands:
-      - bash -n scripts/validate_config.sh scripts/rollout_guard.sh lambda/bootstrap consumer/server.sh
-      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin $ECR_REPO_URI
+      - aws ecr get-login-password --region $AWS_DEFAULT_REGION | docker login --username AWS --password-stdin "$ECR_REPO_URI"
   build:
     commands:
-      - ./scripts/validate_config.sh config/candidate-valid.yaml
-      - ./scripts/validate_config.sh config/candidate-v1.4.yaml config/candidate-v1.4.yaml.sig security/public/ed25519-public.pem
-      - '! ./scripts/validate_config.sh config/candidate-broken.yaml'
-      - '! ./scripts/validate_config.sh config/candidate-oversized.yaml'
-      - docker build -t $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION -f consumer/Dockerfile consumer/
-      - docker push $ECR_REPO_URI:$CODEBUILD_RESOLVED_SOURCE_VERSION
-      - (cd lambda && zip -q ../config-validator-lambda.zip bootstrap)
-  post_build:
-    commands:
+      - ./scripts/run_test_suite.sh junit-report.xml
+      - IMAGE_TAG="${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest}"
+      - docker build -t "$ECR_REPO_URI:$IMAGE_TAG" -f consumer/Dockerfile consumer/
+      - docker push "$ECR_REPO_URI:$IMAGE_TAG"
+      - ./scripts/package_lambda.sh
+      - CURRENT_VER=$(aws lambda get-alias --function-name blast-radius-config-validator --name live --query 'FunctionVersion' --output text)
+      - aws lambda update-function-code --function-name blast-radius-config-validator --zip-file fileb://config-validator-lambda.zip >/dev/null
+      - aws lambda wait function-updated --function-name blast-radius-config-validator
+      - aws lambda update-function-configuration --function-name blast-radius-config-validator --description "CodeBuild ${CODEBUILD_BUILD_NUMBER:-manual}" >/dev/null
+      - aws lambda wait function-updated --function-name blast-radius-config-validator
+      - TARGET_VER=$(aws lambda publish-version --function-name blast-radius-config-validator --query 'Version' --output text)
       - |
-        cat <<XML > junit-report.xml
-        <testsuite name="bash-validation-suite" tests="4" failures="0">
-          <testcase classname="config" name="candidate_valid_yaml"/>
-          <testcase classname="config" name="candidate_v1_4_ed25519_sig"/>
-          <testcase classname="config" name="reject_broken_yaml"/>
-          <testcase classname="config" name="reject_oversized_yaml"/>
-        </testsuite>
-        XML
+        cat <<APPSPEC > appspec.yml
+        version: 0.0
+        Resources:
+          - myLambdaFunction:
+              Type: AWS::Lambda::Function
+              Properties:
+                Name: "blast-radius-config-validator"
+                Alias: "live"
+                CurrentVersion: "${CURRENT_VER}"
+                TargetVersion: "${TARGET_VER}"
+        APPSPEC
 reports:
   bash-validation-reports:
     files:
@@ -35,5 +42,5 @@ reports:
     file-format: JUNITXML
 artifacts:
   files:
-    - config-validator-lambda.zip
     - appspec.yml
+    - junit-report.xml

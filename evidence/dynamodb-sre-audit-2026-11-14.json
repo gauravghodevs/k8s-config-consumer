@@ -1,311 +1,11 @@
 {
     "Items": [
         {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
             "sha256": {
-                "S": "unverified"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "state": {
-                "S": "PENDING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:03:07Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "unverified"
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
             },
             "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "state": {
-                "S": "VALIDATING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:03:11Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:03:19Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:03:33Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:03:47Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:04:00Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:04:14Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:04:27Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "HEALTHY"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180307"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:04:41Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "unverified"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114174820"
-            },
-            "state": {
-                "S": "PENDING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:48:20Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "unverified"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114174820"
-            },
-            "state": {
-                "S": "VALIDATING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:48:31Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114174820"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:48:44Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "unverified"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114175454"
-            },
-            "state": {
-                "S": "PENDING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:54:55Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "unverified"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114175454"
-            },
-            "state": {
-                "S": "VALIDATING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:54:58Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114175454"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:55:05Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "unverified"
+                "S": "candidate-v1.5-runtime-test.yaml"
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
@@ -314,70 +14,150 @@
                 "S": "PENDING"
             },
             "rollout_id": {
-                "S": "ro-20261114174849"
+                "S": "ro-20261114184918"
             },
             "timestamp": {
-                "S": "2026-11-14T17:48:49Z"
+                "S": "2026-11-14T18:49:18Z"
             }
         },
         {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
             "sha256": {
-                "S": "unverified"
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
+            },
+            "candidate": {
+                "S": "candidate-v1.5-runtime-test.yaml"
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114174849"
             },
             "state": {
                 "S": "VALIDATING"
             },
+            "rollout_id": {
+                "S": "ro-20261114184918"
+            },
             "timestamp": {
-                "S": "2026-11-14T17:48:53Z"
+                "S": "2026-11-14T18:49:22Z"
             }
         },
         {
             "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
+                "S": "candidate-v1.5-runtime-test.yaml"
             },
             "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
             },
             "rollout_id": {
-                "S": "ro-20261114174849"
+                "S": "ro-20261114184918"
             },
             "state": {
                 "S": "PROMOTING"
             },
             "timestamp": {
-                "S": "2026-11-14T17:49:02Z"
+                "S": "2026-11-14T18:49:30Z"
             }
         },
         {
             "sha256": {
-                "S": "unverified"
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
             },
             "candidate": {
-                "S": "candidate-v1.4.yaml"
+                "S": "candidate-v1.5-runtime-test.yaml"
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
             },
             "rollout_id": {
-                "S": "ro-20261114180128"
+                "S": "ro-20261114184918"
+            },
+            "state": {
+                "S": "BAKING"
+            },
+            "timestamp": {
+                "S": "2026-11-14T18:49:44Z"
+            }
+        },
+        {
+            "candidate": {
+                "S": "candidate-v1.5-runtime-test.yaml"
+            },
+            "sha256": {
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
+            },
+            "slo_remaining_budget_pct": {
+                "N": "0"
+            },
+            "rollout_id": {
+                "S": "ro-20261114184918"
+            },
+            "state": {
+                "S": "HALTED"
+            },
+            "timestamp": {
+                "S": "2026-11-14T18:49:58Z"
+            }
+        },
+        {
+            "sha256": {
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
+            },
+            "candidate": {
+                "S": "candidate-v1.5-runtime-test.yaml"
+            },
+            "slo_remaining_budget_pct": {
+                "N": "0"
+            },
+            "rollout_id": {
+                "S": "ro-20261114184918"
+            },
+            "state": {
+                "S": "ROLLING_BACK"
+            },
+            "timestamp": {
+                "S": "2026-11-14T18:50:03Z"
+            }
+        },
+        {
+            "candidate": {
+                "S": "candidate-v1.5-runtime-test.yaml"
+            },
+            "sha256": {
+                "S": "81343316010a9274ca1c554155f9f718af25410a0e2d4a246cea1c7c66243a9a"
+            },
+            "slo_remaining_budget_pct": {
+                "N": "0"
+            },
+            "state": {
+                "S": "HALTED"
+            },
+            "rollout_id": {
+                "S": "ro-20261114184918"
+            },
+            "timestamp": {
+                "S": "2026-11-14T18:50:34Z"
+            }
+        },
+        {
+            "candidate": {
+                "S": "candidate-v1.4.yaml"
+            },
+            "sha256": {
+                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
+            },
+            "slo_remaining_budget_pct": {
+                "N": "100"
+            },
+            "rollout_id": {
+                "S": "ro-20261114184740"
             },
             "state": {
                 "S": "PENDING"
             },
             "timestamp": {
-                "S": "2026-11-14T18:01:28Z"
+                "S": "2026-11-14T18:47:40Z"
             }
         },
         {
@@ -385,39 +165,39 @@
                 "S": "candidate-v1.4.yaml"
             },
             "sha256": {
-                "S": "unverified"
+                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180128"
             },
             "state": {
                 "S": "VALIDATING"
             },
+            "rollout_id": {
+                "S": "ro-20261114184740"
+            },
             "timestamp": {
-                "S": "2026-11-14T18:01:32Z"
+                "S": "2026-11-14T18:47:44Z"
             }
         },
         {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
             "sha256": {
                 "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
+            },
+            "candidate": {
+                "S": "candidate-v1.4.yaml"
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
             },
-            "rollout_id": {
-                "S": "ro-20261114180128"
-            },
             "state": {
                 "S": "PROMOTING"
             },
+            "rollout_id": {
+                "S": "ro-20261114184740"
+            },
             "timestamp": {
-                "S": "2026-11-14T18:01:40Z"
+                "S": "2026-11-14T18:47:52Z"
             }
         },
         {
@@ -434,10 +214,10 @@
                 "S": "BAKING"
             },
             "rollout_id": {
-                "S": "ro-20261114180128"
+                "S": "ro-20261114184740"
             },
             "timestamp": {
-                "S": "2026-11-14T18:01:53Z"
+                "S": "2026-11-14T18:48:05Z"
             }
         },
         {
@@ -449,15 +229,35 @@
             },
             "slo_remaining_budget_pct": {
                 "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180128"
             },
             "state": {
                 "S": "PROMOTING"
             },
+            "rollout_id": {
+                "S": "ro-20261114184740"
+            },
             "timestamp": {
-                "S": "2026-11-14T18:02:08Z"
+                "S": "2026-11-14T18:48:20Z"
+            }
+        },
+        {
+            "candidate": {
+                "S": "candidate-v1.4.yaml"
+            },
+            "sha256": {
+                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
+            },
+            "slo_remaining_budget_pct": {
+                "N": "100"
+            },
+            "state": {
+                "S": "BAKING"
+            },
+            "rollout_id": {
+                "S": "ro-20261114184740"
+            },
+            "timestamp": {
+                "S": "2026-11-14T18:48:33Z"
             }
         },
         {
@@ -470,34 +270,34 @@
             "slo_remaining_budget_pct": {
                 "N": "100"
             },
+            "state": {
+                "S": "PROMOTING"
+            },
             "rollout_id": {
-                "S": "ro-20261114180128"
+                "S": "ro-20261114184740"
+            },
+            "timestamp": {
+                "S": "2026-11-14T18:48:47Z"
+            }
+        },
+        {
+            "candidate": {
+                "S": "candidate-v1.4.yaml"
+            },
+            "sha256": {
+                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
+            },
+            "slo_remaining_budget_pct": {
+                "N": "100"
+            },
+            "rollout_id": {
+                "S": "ro-20261114184740"
             },
             "state": {
                 "S": "BAKING"
             },
             "timestamp": {
-                "S": "2026-11-14T18:02:20Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180128"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:02:34Z"
+                "S": "2026-11-14T18:49:00Z"
             }
         },
         {
@@ -511,457 +311,17 @@
                 "N": "100"
             },
             "rollout_id": {
-                "S": "ro-20261114180128"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:02:48Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114180128"
+                "S": "ro-20261114184740"
             },
             "state": {
                 "S": "HEALTHY"
             },
             "timestamp": {
-                "S": "2026-11-14T18:03:02Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PENDING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:10:30Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "VALIDATING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:10:35Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:10:43Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:10:57Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:11:12Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:11:27Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:11:41Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:11:54Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "HEALTHY"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181030"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:12:07Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "sha256": {
-                "S": "unverified"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114175439"
-            },
-            "state": {
-                "S": "PENDING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:54:39Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "unverified"
-            },
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114175439"
-            },
-            "state": {
-                "S": "VALIDATING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:54:43Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.4.yaml"
-            },
-            "sha256": {
-                "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114175439"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T17:54:50Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PENDING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:12:12Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "VALIDATING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:12:16Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:12:24Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:12:37Z"
-            }
-        },
-        {
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:12:52Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:13:05Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "PROMOTING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:13:20Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "state": {
-                "S": "BAKING"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:13:33Z"
-            }
-        },
-        {
-            "sha256": {
-                "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c"
-            },
-            "candidate": {
-                "S": "candidate-v1.5-failure.yaml"
-            },
-            "slo_remaining_budget_pct": {
-                "N": "100"
-            },
-            "rollout_id": {
-                "S": "ro-20261114181212"
-            },
-            "state": {
-                "S": "HEALTHY"
-            },
-            "timestamp": {
-                "S": "2026-11-14T18:13:47Z"
+                "S": "2026-11-14T18:49:14Z"
             }
         }
     ],
-    "Count": 48,
-    "ScannedCount": 48,
+    "Count": 16,
+    "ScannedCount": 16,
     "ConsumedCapacity": null
 }

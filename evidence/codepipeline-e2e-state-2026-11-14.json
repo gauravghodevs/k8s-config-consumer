@@ -73,7 +73,7 @@
             ],
             "latestExecution": {
                 "pipelineExecutionId": "16ccabcd-a844-4738-a745-44f048e423e2",
-                "status": "InProgress"
+                "status": "Succeeded"
             }
         },
         {
@@ -85,9 +85,25 @@
             "actionStates": [
                 {
                     "actionName": "CodeDeployCanary",
+                    "latestExecution": {
+                        "actionExecutionId": "aa228d06-1e78-4065-a475-30dbb440b3f4",
+                        "status": "Failed",
+                        "summary": "Deployment d-QXG8033OL created",
+                        "lastStatusChange": "2026-11-14T18:18:43.158000+00:00",
+                        "externalExecutionId": "d-QXG8033OL",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codedeploy/home?region=ap-south-1#/deployments/d-QXG8033OL",
+                        "errorDetails": {
+                            "code": "JobFailed",
+                            "message": "Deployment d-QXG8033OL failed. Error code: IAM_ROLE_PERMISSIONS; Error message: The IAM role arn:aws:iam::383071508649:role/blast-radius-codedeploy-role does not give you permission to perform operations in the following AWS service: Amazon S3. Contact your AWS administrator if you need help. If you are an AWS administrator, you can grant permissions to your users or groups by creating IAM policies. Rollback message: Deployment d-QXG8033OL terminated. Automatic rollback is triggered with a DeploymentId d-0UGSRG3OL"
+                        }
+                    },
                     "entityUrl": "https://console.aws.amazon.com/codedeploy/home?region=ap-south-1#/applications/blast-radius-validator-app"
                 }
-            ]
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "16ccabcd-a844-4738-a745-44f048e423e2",
+                "status": "Failed"
+            }
         }
     ],
     "created": "2026-11-14T18:15:45.001000+00:00",

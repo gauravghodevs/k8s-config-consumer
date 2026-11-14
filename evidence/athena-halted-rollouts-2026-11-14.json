@@ -13,6 +13,32 @@
                         "VarCharValue": "timestamp"
                     }
                 ]
+            },
+            {
+                "Data": [
+                    {
+                        "VarCharValue": "ro-20261114184918"
+                    },
+                    {
+                        "VarCharValue": "HALTED"
+                    },
+                    {
+                        "VarCharValue": "2026-11-14T18:50:34Z"
+                    }
+                ]
+            },
+            {
+                "Data": [
+                    {
+                        "VarCharValue": "ro-20261114184918"
+                    },
+                    {
+                        "VarCharValue": "ROLLING_BACK"
+                    },
+                    {
+                        "VarCharValue": "2026-11-14T18:50:03Z"
+                    }
+                ]
             }
         ],
         "ResultSetMetadata": {

@@ -7,27 +7,15 @@ PUB_KEY="${3:-security/public/ed25519-public.pem}"
 SCHEMA_FILE="${SCHEMA_FILE:-consumer/schema/rules.schema.json}"
 MAX_BYTES=1048576
 
-if [[ ! -f "$CONFIG_FILE" ]]; then
-  echo "ERROR: Missing config file: $CONFIG_FILE" >&2
-  exit 1
-fi
+[[ -f "$CONFIG_FILE" ]] || { echo "ERROR: Missing config file: $CONFIG_FILE" >&2; exit 1; }
+[[ -f "$SCHEMA_FILE" ]] || { echo "ERROR: Missing schema file: $SCHEMA_FILE" >&2; exit 1; }
 
-if [[ ! -f "$SCHEMA_FILE" ]]; then
-  echo "ERROR: Missing schema file: $SCHEMA_FILE" >&2
-  exit 1
-fi
-
-# 1. Enforce 1 MiB ceiling
-FILE_SIZE=$(
-  wc -c < "$CONFIG_FILE" \
-    | tr -d ' '
-)
+FILE_SIZE=$(wc -c < "$CONFIG_FILE" | tr -d ' ')
 if (( FILE_SIZE == 0 || FILE_SIZE > MAX_BYTES )); then
   echo "ERROR: Invalid size ($FILE_SIZE bytes)." >&2
   exit 1
 fi
 
-# 2. Parse YAML to JSON in memory (no /tmp file issues with snap yq)
 if ! JSON_DOC=$(yq eval -o=json "$CONFIG_FILE" 2>/dev/null); then
   echo "ERROR: Invalid YAML syntax in $CONFIG_FILE" >&2
   exit 1
@@ -38,7 +26,6 @@ if [[ -z "$JSON_DOC" || "$JSON_DOC" == "null" ]]; then
   exit 1
 fi
 
-# 3. Validate directly against consumer/schema/rules.schema.json + unique rule IDs
 printf '%s\n' "$JSON_DOC" \
   | jq -e -s '
     def check:
@@ -98,22 +85,20 @@ printf '%s\n' "$JSON_DOC" \
       ==
       ((.[1].rules // []) | map(select(type == "object" and has("id")) | .id) | unique | length)
     )
+    and (
+      ((.[1].rules // []) | map(select(type == "object" and has("name")) | .name) | length)
+      ==
+      ((.[1].rules // []) | map(select(type == "object" and has("name")) | .name) | unique | length)
+    )
   ' "$SCHEMA_FILE" - >/dev/null || {
-  echo "ERROR: JSON Schema or duplicate-ID validation failed for $CONFIG_FILE" >&2
+  echo "ERROR: JSON Schema or duplicate rule ID/name validation failed for $CONFIG_FILE" >&2
   exit 1
 }
 
-SHA256_HASH=$(
-  sha256sum "$CONFIG_FILE" \
-    | cut -d' ' -f1
-)
+SHA256_HASH=$(sha256sum "$CONFIG_FILE" | cut -d' ' -f1)
 
-# 4. Verify Ed25519 signature when provided
 if [[ -n "$SIG_FILE" ]]; then
-  if [[ ! -f "$SIG_FILE" ]]; then
-    echo "ERROR: Signature file not found: $SIG_FILE" >&2
-    exit 1
-  fi
+  [[ -f "$SIG_FILE" ]] || { echo "ERROR: Signature file not found: $SIG_FILE" >&2; exit 1; }
   TMP_SIG=$(mktemp)
   base64 -d "$SIG_FILE" > "$TMP_SIG"
   if ! openssl pkeyutl -verify -pubin \
@@ -128,6 +113,4 @@ if [[ -n "$SIG_FILE" ]]; then
 fi
 
 printf '{"status":"VALID","file":"%s","sha256":"%s","bytes":%d}\n' \
-  "$CONFIG_FILE" \
-  "$SHA256_HASH" \
-  "$FILE_SIZE"
+  "$CONFIG_FILE" "$SHA256_HASH" "$FILE_SIZE"

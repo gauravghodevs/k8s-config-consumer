@@ -8,3 +8,5 @@ rules:
   - name: allow_internal
     action: allow
     priority: 10
+
+# INJECT_RUNTIME_FAILURE: true

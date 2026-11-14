@@ -46,3 +46,10 @@ eks-no-nat.yaml
 *.disabled
 config-validator-lambda.zip
 repo.zip
+lambda/yq
+lambda/rules.schema.json
+config-validator-lambda.zip
+repo.zip
+*.tfplan
+*.backup
+*.disabled
