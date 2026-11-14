@@ -39,3 +39,10 @@ terraform/*state-backup*.json
 *.tfstate.*
 *.log
 eks-no-nat.yaml
+
+# Terraform plan binaries and scratch backups
+*.tfplan
+*.backup
+*.disabled
+config-validator-lambda.zip
+repo.zip

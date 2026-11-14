@@ -1,0 +1,23 @@
+{
+  "TableName": "blast-radius-rollout-audit",
+  "Count": 2,
+  "ScannedCount": 2,
+  "Items": [
+    {
+      "rollout_id": { "S": "ro-20261114-v14-promote" },
+      "timestamp": { "S": "2026-11-14T16:40:12Z" },
+      "candidate": { "S": "candidate-v1.4.yaml" },
+      "state": { "S": "HEALTHY" },
+      "slo_budget_pct": { "N": "100.0" },
+      "sha256": { "S": "fb899eaf8c1678c032a26fb09f24e8afb7808e939eaf169b93329e4ab5e3c1c3" }
+    },
+    {
+      "rollout_id": { "S": "ro-20261114-v15-rollback" },
+      "timestamp": { "S": "2026-11-14T16:42:05Z" },
+      "candidate": { "S": "candidate-v1.5-failure.yaml" },
+      "state": { "S": "HALTED" },
+      "slo_budget_pct": { "N": "0.0" },
+      "sha256": { "S": "d4fcfd153b77f532d42432bf2b2b5e987104fbebfb895c9bd560f280ee23b50c" }
+    }
+  ]
+}
