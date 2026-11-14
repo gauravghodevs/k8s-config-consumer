@@ -2,7 +2,7 @@ apiVersion: eksctl.io/v1alpha5
 kind: ClusterConfig
 metadata:
   name: blast-radius-eks
-  region: us-east-1
+  region: ap-south-1
   tags:
     Project: blast-radius
 vpc:
