@@ -1,0 +1,95 @@
+{
+    "pipelineName": "blast-radius-sre-pipeline",
+    "pipelineVersion": 1,
+    "stageStates": [
+        {
+            "stageName": "Source",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "S3Source",
+                    "currentRevision": {
+                        "revisionId": "zjAlV3Q3yxw87UMH7eGFc8zNpU6tl16B"
+                    },
+                    "latestExecution": {
+                        "actionExecutionId": "937b3c9b-1465-4a5d-b8b7-bc740e8b0a69",
+                        "status": "Succeeded",
+                        "summary": "Amazon S3 version id: zjAlV3Q3yxw87UMH7eGFc8zNpU6tl16B",
+                        "lastStatusChange": "2026-11-14T18:16:18.865000+00:00",
+                        "externalExecutionId": "zjAlV3Q3yxw87UMH7eGFc8zNpU6tl16B"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/s3/home?region=ap-south-1#"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "16ccabcd-a844-4738-a745-44f048e423e2",
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "Build_And_Validate",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "CodeBuildBashSuite",
+                    "latestExecution": {
+                        "actionExecutionId": "1a77e7d9-3fe8-4001-8729-4c3776b10120",
+                        "status": "Succeeded",
+                        "lastStatusChange": "2026-11-14T18:17:21.506000+00:00",
+                        "externalExecutionId": "blast-radius-bash-build:26370cb2-8ae6-4b16-9541-d92ddbb749fb",
+                        "externalExecutionUrl": "https://console.aws.amazon.com/codebuild/home?region=ap-south-1#/builds/blast-radius-bash-build:26370cb2-8ae6-4b16-9541-d92ddbb749fb/view/new"
+                    },
+                    "entityUrl": "https://console.aws.amazon.com/codebuild/home?region=ap-south-1#/projects/blast-radius-bash-build/view"
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "16ccabcd-a844-4738-a745-44f048e423e2",
+                "status": "Succeeded"
+            }
+        },
+        {
+            "stageName": "Manual_SRE_Approval",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "ApproveRollout",
+                    "latestExecution": {
+                        "actionExecutionId": "bc637207-6b64-4fb2-8bb0-2d83971f11cb",
+                        "status": "Succeeded",
+                        "summary": "JUnit suite and image build verified",
+                        "lastStatusChange": "2026-11-14T18:17:33.403000+00:00",
+                        "lastUpdatedBy": "arn:aws:iam::383071508649:user/blast-radius-deployer"
+                    }
+                }
+            ],
+            "latestExecution": {
+                "pipelineExecutionId": "16ccabcd-a844-4738-a745-44f048e423e2",
+                "status": "InProgress"
+            }
+        },
+        {
+            "stageName": "Deploy",
+            "inboundExecutions": [],
+            "inboundTransitionState": {
+                "enabled": true
+            },
+            "actionStates": [
+                {
+                    "actionName": "CodeDeployCanary",
+                    "entityUrl": "https://console.aws.amazon.com/codedeploy/home?region=ap-south-1#/applications/blast-radius-validator-app"
+                }
+            ]
+        }
+    ],
+    "created": "2026-11-14T18:15:45.001000+00:00",
+    "updated": "2026-11-14T18:15:45.001000+00:00"
+}

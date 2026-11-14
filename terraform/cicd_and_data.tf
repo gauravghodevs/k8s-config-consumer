@@ -47,7 +47,7 @@ resource "aws_glue_catalog_table" "rollout_events" {
     }
 
     columns {
-      name = "status"
+      name = "state"
       type = "string"
     }
   }

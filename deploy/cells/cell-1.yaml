@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name: rules-consumer
-          image: blast-radius-consumer:test
+          image: k8s-config-consumer:local
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000

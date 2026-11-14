@@ -2,34 +2,124 @@
 set -euo pipefail
 
 RUNTIME_API="http://${AWS_LAMBDA_RUNTIME_API}/2018-06-01/runtime"
+SCHEMA_FILE="${LAMBDA_TASK_ROOT}/rules.schema.json"
+YQ_BIN="${LAMBDA_TASK_ROOT}/yq"
 MAX_BYTES=1048576
+
+validate_payload() {
+  local PAYLOAD
+  PAYLOAD="$1"
+  local BYTE_LEN
+  BYTE_LEN=$(
+    printf "%s" "$PAYLOAD" \
+      | wc -c \
+      | tr -d ' '
+  )
+  if (( BYTE_LEN == 0 || BYTE_LEN > MAX_BYTES )); then
+    echo '{"statusCode":400,"body":"{\"valid\":false,\"reason\":\"Size limit exceeded\"}"}'
+    return
+  fi
+
+  local JSON_DOC
+  if ! JSON_DOC=$(printf "%s" "$PAYLOAD" | "$YQ_BIN" eval -o=json - 2>/dev/null); then
+    echo '{"statusCode":422,"body":"{\"valid\":false,\"reason\":\"Malformed YAML\"}"}'
+    return
+  fi
+
+  if printf '%s\n' "$JSON_DOC" \
+    | jq -e -s '
+      def check:
+        (if (.[0].type != null) then
+          if (.[0].type == "integer") then
+            ((.[1] | type) == "number") and ((.[1] % 1) == 0)
+          else
+            ((.[1] | type) == .[0].type)
+          end
+        else true end)
+        and
+        (if (.[0].enum != null) then
+          (([.[1]] - .[0].enum) | length == 0)
+        else true end)
+        and
+        (if ((.[1] | type) == "string") then
+          (if (.[0].minLength != null) then ((.[1] | length) >= .[0].minLength) else true end) and
+          (if (.[0].maxLength != null) then ((.[1] | length) <= .[0].maxLength) else true end)
+        else true end)
+        and
+        (if ((.[1] | type) == "number") then
+          (if (.[0].minimum != null) then (.[1] >= .[0].minimum) else true end) and
+          (if (.[0].maximum != null) then (.[1] <= .[0].maximum) else true end)
+        else true end)
+        and
+        (if ((.[1] | type) == "object") then
+          (((.[0].required // []) - (.[1] | keys)) | length == 0)
+          and
+          (if (.[0].additionalProperties == false and .[0].properties != null) then
+            (((.[1] | keys) - (.[0].properties | keys)) | length == 0)
+          else true end)
+          and
+          (
+            [ (.[0].properties // {} | to_entries[]), (.[1] | to_entries[]) ]
+            | group_by(.key)
+            | map(select(length == 2) | [.[0].value, .[1].value])
+            | all(.[]; check)
+          )
+        else true end)
+        and
+        (if ((.[1] | type) == "array") then
+          (if (.[0].minItems != null) then ((.[1] | length) >= .[0].minItems) else true end)
+          and
+          (if (.[0].maxItems != null) then ((.[1] | length) <= .[0].maxItems) else true end)
+          and
+          (if (.[0].items != null and (.[1] | length) > 0) then
+            [ [.[0].items], .[1] ]
+            | [ combinations ]
+            | all(.[]; check)
+          else true end)
+        else true end);
+
+      (length == 2)
+      and check
+      and (
+        ((.[1].rules // []) | map(select(type == "object" and has("id")) | .id) | length)
+        ==
+        ((.[1].rules // []) | map(select(type == "object" and has("id")) | .id) | unique | length)
+      )
+    ' "$SCHEMA_FILE" - >/dev/null 2>&1; then
+    local SHA256
+    SHA256=$(
+      printf "%s" "$PAYLOAD" \
+        | sha256sum \
+        | cut -d' ' -f1
+    )
+    printf '{"statusCode":200,"body":"{\\"valid\\":true,\\"sha256\\":\\"%s\\",\\"bytes\\":%d}"}\n' \
+      "$SHA256" \
+      "$BYTE_LEN"
+  else
+    echo '{"statusCode":422,"body":"{\"valid\":false,\"reason\":\"Schema or duplicate-ID validation failed\"}"}'
+  fi
+}
 
 while true; do
   HEADERS=$(mktemp)
   EVENT_DATA=$(curl -sS -LD "$HEADERS" "${RUNTIME_API}/invocation/next")
-  REQUEST_ID=$(grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" | tr -d '[:space:]' | cut -d: -f2)
+  REQUEST_ID=$(
+    grep -Fi Lambda-Runtime-Aws-Request-Id "$HEADERS" \
+      | tr -d '[:space:]' \
+      | cut -d: -f2
+  )
   rm -f "$HEADERS"
 
-  # Extract config content from API Gateway body or EventBridge metadata
   BODY=$(echo "$EVENT_DATA" | jq -r '.body // empty')
-  if [[ -z "$BODY" ]]; then
+  if [[ -n "$BODY" ]]; then
+    RESP=$(validate_payload "$BODY")
+  else
     S3_KEY=$(echo "$EVENT_DATA" | jq -r '.detail.object.key // "event-ping"')
     S3_SIZE=$(echo "$EVENT_DATA" | jq -r '.detail.object.size // 0')
     if (( S3_SIZE > MAX_BYTES )); then
       RESP='{"statusCode":400,"body":"{\"valid\":false,\"reason\":\"Oversized S3 object\"}"}'
     else
-      RESP=$(jq -n --arg key "$S3_KEY" '{"statusCode":200,"body":("{\"valid\":true,\"s3_key\":\"" + $key + "\"}")}')
-    fi
-  else
-    BYTE_LEN=$(printf "%s" "$BODY" | wc -c | tr -d ' ')
-    SHA256=$(printf "%s" "$BODY" | sha256sum | awk '{print $1}')
-    if (( BYTE_LEN == 0 || BYTE_LEN > MAX_BYTES )); then
-      RESP='{"statusCode":400,"body":"{\"valid\":false,\"reason\":\"Size limit exceeded\"}"}'
-    elif printf "%s" "$BODY" | grep -Eq "version:" && printf "%s" "$BODY" | grep -Eq "rules:"; then
-      RESP=$(jq -n --arg sha "$SHA256" --argjson sz "$BYTE_LEN" \
-        '{"statusCode":200,"body":("{\"valid\":true,\"sha256\":\"" + $sha + "\",\"bytes\":" + ($sz|tostring) + "}")}')
-    else
-      RESP='{"statusCode":422,"body":"{\"valid\":false,\"reason\":\"Missing required version or rules keys\"}"}'
+      RESP=$(jq -c -n --arg key "$S3_KEY" '{"statusCode":200,"body":("{\"valid\":true,\"s3_key\":\"" + $key + "\"}")}')
     fi
   fi
 

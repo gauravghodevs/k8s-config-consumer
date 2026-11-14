@@ -13,26 +13,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install yq and jq
+      - name: Install pinned yq v4.44.3
         run: |
-          sudo wget -qO /usr/local/bin/yq https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64
+          YQ_VERSION="v4.44.3"
+          YQ_SHA256="a2c097180dd884a8d50c956ee16a9cec070f30a7947cf4ebf87d5f36213e9ed7"
+          sudo wget -qO /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"
+          echo "${YQ_SHA256}  /usr/local/bin/yq" | sha256sum -c -
           sudo chmod +x /usr/local/bin/yq
-          jq --version && yq --version
 
-      - name: Lint all Bash scripts
-        run: |
-          bash -n scripts/validate_config.sh
-          bash -n scripts/rollout_guard.sh
-          bash -n lambda/bootstrap
-          bash -n consumer/server.sh
-
-      - name: Run Config Validation & Ed25519 Signature Suite
-        run: |
-          ./scripts/validate_config.sh config/candidate-valid.yaml
-          ./scripts/validate_config.sh config/candidate-v1.3.yaml
-          ./scripts/validate_config.sh config/candidate-v1.4.yaml config/candidate-v1.4.yaml.sig security/public/ed25519-public.pem
-          ! ./scripts/validate_config.sh config/candidate-broken.yaml
-          ! ./scripts/validate_config.sh config/candidate-oversized.yaml
+      - name: Execute Validation Suite & Generate Dynamic JUnit XML
+        run: ./scripts/run_test_suite.sh junit-report.xml
 
       - name: Build and Smoke-Test Pure Bash Consumer Container
         run: |
@@ -40,5 +30,5 @@ jobs:
           docker run -d --rm --name consumer-ci -p 8000:8000 k8s-config-consumer:ci
           sleep 2
           curl -f -sS http://localhost:8000/healthz | jq -e '.sli_healthy == true'
-          curl -f -sS http://localhost:8000/metrics | grep -q "slo_target_ratio"
+          curl -f -sS http://localhost:8000/metrics | grep -q "config_reload_errors_total"
           docker stop consumer-ci
