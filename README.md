@@ -1,5 +1,14 @@
 # Blast-Radius Guard (`k8s-config-consumer`)
 
+## 🎬 Live Blast-Radius Guard Simulation (33% Canary Containment & Auto-Rollback)
+
+
+
+https://github.com/user-attachments/assets/eb1c0942-8d08-457c-8291-b2e28641a9fa
+
+
+
+
 An automated Kubernetes progressive configuration delivery controller, non-root HTTP consumer microservice, and AWS DevSecOps/SRE validation pipeline implemented in **Bash (`bash`, `jq`, `yq`, `openssl`, `socat`)**, **Terraform (HCL)**, and **Kubernetes**.
 
 ## 1. Core Components
